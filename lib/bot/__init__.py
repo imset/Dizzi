@@ -1,11 +1,16 @@
-#Imports discord.py bot library
+from asyncio import sleep
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from discord.ext.commands import Bot as BotBase
+from discord.ext.commands import CommandNotFound
+from discord import Intents
+from glob import glob
+
+from ..db import db
+
 import discord
 from discord.ext import commands
-#for timezone handling
-from datetime import date
-from datetime import datetime
-import pytz
-from pytz import timezone
+from discord import Embed, File
+
 #the following is cut and paste from the library tutorial for logging, outputs dizzilog.log
 import logging
 logger = logging.getLogger('discord')
@@ -14,16 +19,99 @@ handler = logging.FileHandler(filename='dizzilog.log', encoding='utf-8', mode='w
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-#creates an instance of a client, command prefix is ;
-client = commands.Bot(command_prefix=';')
+PREFIX = ";"
+OWNER_IDS = [134760463811477504]
+COGS = [path.split("\\")[-1][:-3] for path in glob("./lib/cogs/*.py")]
 
-#repeat command to test with
+class Ready(object):
+    def __init__(self):
+        for cog in COGS:
+            setattr(self, cog, False)
+            
+    def ready_up(self, cog):
+        setattr(self, cog, True)
+        print(f" {cog} cog ready")
+        
+    def all_ready(self):
+        return all([getattr(self, cog) for cog in COGS])
+
+class Bot(BotBase):
+    def __init__(self):
+        self.prefix = PREFIX
+        self.ready = False
+        self.cogs_ready = Ready()
+        
+        self.scheduler = AsyncIOScheduler()
+        
+        db.autosave(self.scheduler)
+        
+        super().__init__(
+            command_prefix=PREFIX,
+            owner_ids=OWNER_IDS,
+            intents=Intents.all()
+        )
+    
+    def setup(self):
+        for cog in COGS:
+            self.load_extension(f"lib.cogs.{cog}")
+            print(f" {cog} cog loaded")
+        print(" cog setup complete")
+        
+    def run(self, version):
+        self.VERSION = version
+        
+        print("Running Cog Setup...")
+        self.setup()
+        
+        with open("./lib/bot/token.0", "r", encoding="utf=8") as tf:
+            self.TOKEN = tf.read()
+            
+        print("Running Dizzi...")
+        super().run(self.TOKEN, reconnect=True)
+        
+    async def on_connect(self):
+        print (" Dizzi logged in as {0.user}".format(bot))
+        
+    async def on_disconnect(self):
+        print("Dizzi Disconnected")
+        
+    async def on_error(self, err, *args, **kwargs):
+        if err == "on_command_error":
+            await args[0].send("Something went wrong.")
+        raise
+    
+    #do not change on_command_error from passing on CommandNotFound
+    async def on_command_error(self, ctx, exc):
+        if isinstance(exc, CommandNotFound):
+            pass
+        elif hasattr(exc, "original"):
+            raise exc.original
+        else:
+            raise exc
+    
+    async def on_ready(self):
+        if not self.ready:
+            self.scheduler.start()
+
+            while not self.cogs_ready.all_ready():
+                await sleep(0.5)
+                
+            self.ready = True
+            print(" Dizzi is ready")
+            
+        else:
+            print("Dizzi reconnected")
+        
+    async def on_message(self, message):
+        if not message.author.bot:
+            await self.process_commands(message)
+        
+'''       
+#commands
 @client.command()
 async def rep(ctx, *, arg):
     await ctx.send(arg)
     
-#the big timezone boy itself
-
 @client.command()
 async def tz(ctx, *, arg):
 
@@ -51,7 +139,6 @@ async def tz(ctx, *, arg):
             elif int(arg[i]) == 1 or int(arg[i]) == 2:
                 #check if there are any digits after the 1 or 2. If so, they're the hour.
                 try:
-                    #isinstance(arg[i+1],int)
                     int(arg[i+1])
                 except:
                     hour = arg[i]
@@ -92,16 +179,6 @@ async def tz(ctx, *, arg):
                 else:
                     min = arg[j+1] + arg[j+2]
                     break
-            '''
-            elif arg[j] == "a" or arg[j] == "A":
-                min = "00"
-                ampm = "AM"
-                break
-            elif arg[j] == "p" or arg[j] == "P":
-                min = "00"
-                ampm = "PM"
-                break
-            '''
             j +=1
             
         #defaults min to :00    
@@ -129,10 +206,13 @@ async def tz(ctx, *, arg):
         zone = "undefined"
         if "pst" in str(arg.lower()) or "pdt" in str(arg.lower()):
             zone = "America/Los_Angeles"
+            zoneshrt = "PST"
         elif "hst" in str(arg.lower()):
             zone = "Pacific/Honolulu"
+            zoneshrt = "HST"
         elif "jst" in str(arg.lower()):
             zone = "Asia/Tokyo"
+            zoneshrt = "JST"
         else:
             await ctx.send("Error: Please include a valid timezone (PST/HST/JST)")
             return
@@ -144,8 +224,6 @@ async def tz(ctx, *, arg):
         unaware_zone = datetime.strptime(dt, "%m/%d/%Y %I:%M:%S %p")
         localtz = timezone(zone)
         aware_zone = localtz.localize(unaware_zone)
-        #utc will hold the data for all 3 timezones
-        #utc = aware_zone.astimezone(pytz.utc)
         hst = pytz.timezone("Pacific/Honolulu")
         pst = pytz.timezone("America/Los_Angeles")
         jst = pytz.timezone("Asia/Tokyo")   
@@ -153,7 +231,11 @@ async def tz(ctx, *, arg):
         hst_send = aware_zone.astimezone(hst)
         jst_send = aware_zone.astimezone(jst)
         #send the 3 timezones
-        await ctx.send("**HST**: " + hst_send.strftime("%I:%M %p") + "\n**PST**: " + pst_send.strftime("%I:%M %p") + "\n**JST**: " + jst_send.strftime("%I:%M %p"))
+        tzembed = Embed(title=hour + ":" + min + " " + ampm + " " + zoneshrt + " is:", color=dizzicolor, inline=False) 
+        tzembed.add_field(name="HST", value = hst_send.strftime("%I:%M %p"))
+        tzembed.add_field(name="PST", value = pst_send.strftime("%I:%M %p"))
+        tzembed.add_field(name="JST", value = jst_send.strftime("%I:%M %p"))
+        await ctx.send(embed=embed)
         return
     #if arg is "now". copied from https://stackoverflow.com/questions/10997577/python-timezone-conversion
     elif arg == "now":
@@ -167,15 +249,12 @@ async def tz(ctx, *, arg):
         hst_send = utcmoment.astimezone(hst)
         jst_send = utcmoment.astimezone(jst)
         #send the 3 timezones
-        await ctx.send("**HST**: " + hst_send.strftime("%I:%M %p") + "\n**PST**: " + pst_send.strftime("%I:%M %p") + "\n**JST**: " + jst_send.strftime("%I:%M %p"))
+        tzembed = Embed(title="Current Time", color = dizzicolor, inline=False)
+        tzembed.add_field(name="HST", value = hst_send.strftime("%I:%M %p"))
+        tzembed.add_field(name="PST", value = pst_send.strftime("%I:%M %p"))
+        tzembed.add_field(name="JST", value = jst_send.strftime("%I:%M %p"))
+        await ctx.send(embed=tzembed)
     else:
-        await ctx.send("Timezone conversion for HST/PST/JST. Will reply with a given time in all 3 time zones. \n__**Format:**__\n*Current Time:* **;tz now**\n*Timezone Conversion:* **;tz [time] [AM/PM (optional)] [timezone (PST/HST/JST)]**")
+        await ctx.send("Timezone conversion for HST/PST/JST. Will reply with a given time in all 3 time zones. \n__**Format:**__\n*Current Time:* **;tz now**\n*Timezone Conversion:* **;tz [time] [AM/PM (optional)] [timezone (PST/HST/JST)]**")'''
 
-#reports that client has connected
-@client.event
-async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
-
-#runs the bot with the necessary login token
-
-client.run('NTg4NTg3NDc4OTcwMjY5NzE3.XQHSzg.wqkViUp6RAc13GHwY5M-XkEG_PU')
+bot = Bot()
