@@ -11,29 +11,47 @@ class Fun(Cog):
         await ctx.send(f"{choice(('Hello, ', 'Hiya, ', 'Howdy, '))} {ctx.author.mention}!")
         
     @command(name="roll", aliases=["r"])
-    async def roll_dice(self, ctx, die_string: str):
-        dnum, dval = (int(dice) for dice in die_string.lower().split("d"))
+    async def roll_dice(self, ctx, *, die_string: str):      
+        dnum, dval = (dice for dice in die_string.lower().split("d"))
+        dnum = int(dnum)
+        
+        if "+" in dval:
+            dval, dbns = (int(dice) for dice in dval.lower().split("+"))
+        else:
+            dbns = 0
+            dval = int(dval)
+        
+        if dnum > 100 or dval > 100 or dbns > 100:
+            await ctx.send("Error: please limit sides/rolls/bonus to 100 max.")
+            return
+            
         rolls = [randint(1, dval) for i in range(dnum)]
         rollstr = [str(r) for r in rolls]
-        
-        rollsum = str(sum(rolls))
         
         i = 0
         
         while i < len(rolls):
-            print("in while")
             if rolls[i] == dval:
                 rollstr[i] = "**" + rollstr[i] + "**"
             else:
-                rolls[i] = str(rolls[i])
+                #rolls[i] = str(rolls[i])
+                pass
             i += 1
-                
+        '''
+        if dbns == 0:
+
+        else:
+            finalrollstr = " + ".join(rollstr) + " + __*" + str(dbns) + "*__"
+            rollsum = sum(rolls)
+            rollsum += dbns
+        '''
         finalrollstr = " + ".join(rollstr)
-        
-        await ctx.send(finalrollstr + " = " + rollsum)
-        
-        #await ctx.send(" + ".join([str(r) for r in rolls]) + f" = {sum(rolls)}")
-        
+        rollsum = sum(rolls)
+        if dbns == 0:
+            await ctx.send(finalrollstr + " = " + str(rollsum))
+        else:
+            await ctx.send(finalrollstr + " = " + str(rollsum) + " + *" + str(dbns) + "* = __**" + str(rollsum + dbns) + "**__")
+                
     @Cog.listener()
     async def on_ready(self):
         #tells bot that the cog is ready

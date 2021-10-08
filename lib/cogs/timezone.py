@@ -3,12 +3,18 @@ from discord.ext.commands import command
 from discord import Embed
 #for timezone handling
 from datetime import date
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from pytz import timezone
 
 #defines the bot's embed color
 DIZZICOLOR = 0x2c7c94
+
+# copied from https://stackoverflow.com/questions/19774709/use-python-to-find-out-if-a-timezone-currently-in-daylight-savings-time
+def is_dst(zonename):
+    tz = pytz.timezone(zonename)
+    now = pytz.utc.localize(datetime.utcnow())
+    return now.astimezone(tz).dst() != timedelta(0)
 
 class Timezone(Cog):
     def __init__(self, bot):
@@ -17,7 +23,7 @@ class Timezone(Cog):
     @command(name="timezone", aliases=["tz"])
     async def timezoneconverter(self, ctx, *, arg):
             #first thing, make sure that arg is not "now"
-        if arg != "now" and arg != "help":
+        if arg != "now" and arg != "zonelist":
             #first we want to parse through the arg for the first number. If it's a 0, skip ahead to the next character. If it's a 1 or 2, check if the next character is a :, and if not, concat with the next character.
             i = 0
             
@@ -27,7 +33,7 @@ class Timezone(Cog):
             try:
                 int(arg[i])
             except ValueError:
-                await ctx.send("I don't understand that, sorry")
+                await ctx.send("I don't understand that, sorry. Valid commands are ;tz now, ;tz zonelist, or ;tz <time to convert>")
                 return
             
             #check the hour
@@ -84,7 +90,6 @@ class Timezone(Cog):
                 
             #defaults min to :00    
             if min == "undefined" or int(min) >= 60:
-                print("Cannot find minutes or minutes too large. Defaulting to :00.")
                 min = "00"
                 
             #ampm handling
@@ -105,17 +110,40 @@ class Timezone(Cog):
             
             #timezone handling
             zone = "undefined"
-            if "pst" in str(arg.lower()) or "pdt" in str(arg.lower()):
+            if "pst" in str(arg.lower()) or "pdt" in str(arg.lower()) or "pacific" in str(arg.lower()):
                 zone = "America/Los_Angeles"
                 zoneshrt = "PST"
-            elif "hst" in str(arg.lower()):
+                if is_dst(zone):
+                    zoneshrt = "PDT"
+            elif "hst" in str(arg.lower()) or "hawaii" in str(arg.lower()) or "hawai'i" in str(arg.lower()) or "honolulu" in str(arg.lower()):
                 zone = "Pacific/Honolulu"
                 zoneshrt = "HST"
-            elif "jst" in str(arg.lower()):
+            elif "jst" in str(arg.lower()) or "tokyo" in str(arg.lower()) or "japan" in str(arg.lower()):
                 zone = "Asia/Tokyo"
                 zoneshrt = "JST"
+            elif "bjt" in str(arg.lower()) or "china" in str(arg.lower()):
+                zone = "Asia/Shanghai"
+                zoneshrt = "BJT"
+            elif "cst" in str(arg.lower()) or "cdt" in str(arg.lower()) or "central" in str(arg.lower()):
+                zone = "America/Chicago"
+                zoneshrt = "CST"
+                if is_dst(zone):
+                    zoneshrt = "CDT"
+            elif "est" in str(arg.lower()) or "edt" in str(arg.lower()) or "eastern" in str(arg.lower()):
+                zone = "America/New_York"
+                zoneshrt = "EST"
+                if is_dst(zone):
+                    zoneshrt = "EDT"
+            elif "mst" in str(arg.lower()) or "mdt" in str(arg.lower()) or "mountain" in str(arg.lower()):
+                zone = "America/Denver"
+                zoneshrt = "MST"
+                if is_dst(zone):
+                    zoneshrt = "MDT"
+            elif "pht" in str(arg.lower()) or "philippines" in str(arg.lower()) or "filipino" in str(arg.lower()):
+                zone = "Asia/Manila"
+                zoneshrt = "PHT"
             else:
-                await ctx.send("Error: Please include a valid timezone (PST/HST/JST)")
+                await ctx.send("Error: Please include a valid timezone or location indicator. Do ;tz zonelist for a full list of accepted timezones.")
                 return
 
             #copied from https://stackoverflow.com/questions/18176148/converting-an-un-aware-timestamp-into-an-aware-timestamp-for-utc-conversion
@@ -132,10 +160,10 @@ class Timezone(Cog):
             hst_send = aware_zone.astimezone(hst)
             jst_send = aware_zone.astimezone(jst)
             #send the 3 timezones
-            tzembed = Embed(title=hour + ":" + min + " " + ampm + " " + zoneshrt + " is:", color=DIZZICOLOR, inline=False) 
-            tzembed.add_field(name="HST", value = hst_send.strftime("%I:%M %p"))
-            tzembed.add_field(name="PST", value = pst_send.strftime("%I:%M %p"))
-            tzembed.add_field(name="JST", value = jst_send.strftime("%I:%M %p"))
+            tzembed = Embed(title="Timezone Conversion: " + zone, description=hour + ":" + min + " " + ampm + " " + zoneshrt + " is:", color=DIZZICOLOR, inline=True) 
+            tzembed.add_field(name="__**HST**__", value = "> " + hst_send.strftime("%I:%M %p"), inline=True)
+            tzembed.add_field(name="__**PST**__", value = "> " + pst_send.strftime("%I:%M %p"), inline=True)
+            tzembed.add_field(name="__**JST**__", value = "> " + jst_send.strftime("%I:%M %p"), inline=True)
             await ctx.send(embed=tzembed)
             return
         #if arg is "now". copied from https://stackoverflow.com/questions/10997577/python-timezone-conversion
@@ -150,14 +178,20 @@ class Timezone(Cog):
             hst_send = utcmoment.astimezone(hst)
             jst_send = utcmoment.astimezone(jst)
             #send the 3 timezones
-            tzembed = Embed(title="Current Time", color = DIZZICOLOR, inline=False)
-            tzembed.add_field(name="HST", value = hst_send.strftime("%I:%M %p"))
-            tzembed.add_field(name="PST", value = pst_send.strftime("%I:%M %p"))
-            tzembed.add_field(name="JST", value = jst_send.strftime("%I:%M %p"))
+            tzembed = Embed(title="Current Time", color = DIZZICOLOR)
+            tzembed.add_field(name="__**HST**__", value = "> " + hst_send.strftime("%I:%M %p"), inline=True)
+            tzembed.add_field(name="__**PST**__", value = "> " + pst_send.strftime("%I:%M %p"), inline=True)
+            tzembed.add_field(name="__**JST**__", value = "> " + jst_send.strftime("%I:%M %p"), inline=True)
             await ctx.send(embed=tzembed)
+        elif arg == "zonelist" or arg == "zl":
+            zlembed = Embed(title="Valid Timezones", color=DIZZICOLOR)
+            zlembed.add_field(name="__Timezone__", value="> Pacific\n> Hawaii\n> Japan\n> China\n> Central\n> Eastern\n> Mountain\n> Philippines", inline = True)
+            zlembed.add_field(name="__Alias 1__", value="> PST\n> HST\n> JST\n> BJT\n> CST\n> EST\n> MST\n> PHT", inline = True)
+            zlembed.add_field(name="__Alias 1__", value="> PDT\n> Honolulu\n> Tokyo\n> -\n> CDT\n> EDT\n> MDT\n> Filipino", inline = True)
+            await ctx.send(embed=zlembed)
         else:
-            await ctx.send("Timezone conversion for HST/PST/JST. Will reply with a given time in all 3 time zones. \n__**Format:**__\n*Current Time:* **;tz now**\n*Timezone Conversion:* **;tz [time] [AM/PM (optional)] [timezone (PST/HST/JST)]**")
-    
+            await ctx.send("I don't understand that. Valid commands are ;tz now, ;tz zonelist, or ;tz <time to convert>")
+
     @Cog.listener()
     async def on_ready(self):
         #tells bot that the cog is ready
