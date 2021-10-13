@@ -24,12 +24,12 @@ class Timezone(Cog):
     async def timezoneconverter(self, ctx, *, arg):
             #first thing, make sure that arg is not "now"
         if arg != "now" and arg != "zonelist":
-            #first we want to parse through the arg for the first number. If it's a 0, skip ahead to the next character. If it's a 1 or 2, check if the next character is a :, and if not, concat with the next character.
+            #iterator variable for argument, used to determine the exact character of a string
             i = 0
             
-            #determine relevant hour
+            #initialize hour as string undefined
             hour = "undefined"
-            #exception handling to make sure the string starts with a number, which is interpreted as the hour.
+            #exception handling to make sure the string starts with a number, which will be interpreted as the hour.
             try:
                 int(arg[i])
             except ValueError:
@@ -55,7 +55,7 @@ class Timezone(Cog):
                         if int(hour) > 24:
                             await ctx.send("Error: Hour must be between 1-24")
                             return
-
+                
                 elif int(arg[i]) >= 3:
                     hour = arg[i]
                     break

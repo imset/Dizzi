@@ -2,6 +2,7 @@ from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from discord.ext.commands import Bot as BotBase
 from discord.ext.commands import CommandNotFound
+from discord.ext.commands import Context
 from discord import Intents
 from glob import glob
 
@@ -68,6 +69,16 @@ class Bot(BotBase):
             
         print("Running Dizzi...")
         super().run(self.TOKEN, reconnect=True)
+        
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=Context)
+        
+        #apparently to avoid sending commands over dm
+        if ctx.command is not None and ctx.guild is not None:
+            if self.ready:
+                await self.invoke(ctx)
+            else:
+                await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
         
     async def on_connect(self):
         print (" Dizzi logged in as {0.user}".format(bot))
