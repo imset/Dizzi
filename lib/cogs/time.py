@@ -16,12 +16,24 @@ def is_dst(zonename):
     now = pytz.utc.localize(datetime.utcnow())
     return now.astimezone(tz).dst() != timedelta(0)
 
-class Timezone(Cog):
+class Time(Cog):
     def __init__(self, bot):
         self.bot = bot
         
-    @command(name="timezone", aliases=["tz"])
+    @command(name="timezone", aliases=["tz"], brief="Convert a given time in a timezone to HST, PST, and JST.", usage="`timezone now` - gives the current time in JST/HST/PST\n`timezone <arg>` - Timezone conversion. `arg` is a time (number from 1-24) and a valid timezone. It also optionally accepts AM/PM.\nExample: `timezone 8PM pst`")
     async def timezoneconverter(self, ctx, *, arg):
+        """Convert a specific time in a timezone to HST, PST, and JST. There are a few timezones available to convert from, but for now it only converts to HST/PST/JST.
+        
+        Currently Supported Timezones:
+            `[Pacific/PST/PDT]`
+            `[HST/Hawaii/Honolulu]`
+            `[JST/Tokyo/Japan]`
+            `[BJT/China]`
+            `[CST/CDT/Central]`
+            `[EST/EDT/Eastern]`
+            `[MST/MDT/Mountain]`
+            `[PHT/Philippines/Filipino]`
+        """
             #first thing, make sure that arg is not "now"
         if arg != "now" and arg != "zonelist":
             #iterator variable for argument, used to determine the exact character of a string
@@ -33,7 +45,7 @@ class Timezone(Cog):
             try:
                 int(arg[i])
             except ValueError:
-                await ctx.send("I don't understand that, sorry. Valid commands are ;tz now, ;tz zonelist, or ;tz <time to convert>")
+                await ctx.send("I don't understand that, sorry. Use ;help tz for command help.")
                 return
             
             #check the hour
@@ -143,7 +155,7 @@ class Timezone(Cog):
                 zone = "Asia/Manila"
                 zoneshrt = "PHT"
             else:
-                await ctx.send("Error: Please include a valid timezone or location indicator. Do ;tz zonelist for a full list of accepted timezones.")
+                await ctx.send("Error: Please include a valid timezone or location indicator. Use ;help tz for command help.")
                 return
 
             #copied from https://stackoverflow.com/questions/18176148/converting-an-un-aware-timestamp-into-an-aware-timestamp-for-utc-conversion
@@ -196,7 +208,7 @@ class Timezone(Cog):
     async def on_ready(self):
         #tells bot that the cog is ready
         if not self.bot.ready:
-            self.bot.cogs_ready.ready_up("timezone")
+            self.bot.cogs_ready.ready_up("time")
             
 def setup(bot):
-    bot.add_cog(Timezone(bot))
+    bot.add_cog(Time(bot))

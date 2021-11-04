@@ -1,14 +1,17 @@
 from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from discord.ext.commands import Bot as BotBase
-from discord.ext.commands import CommandNotFound
+from discord.errors import HTTPException, Forbidden
+from discord.ext.commands import CommandNotFound, BadArgument, MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure
 from discord.ext.commands import Context
 from discord import Intents
 from glob import glob
 
+from discord.ext.commands import when_mentioned_or, command, has_permissions
+
 from ..db import db
 
-import discord
+#import discord
 from discord.ext import commands
 from discord import Embed, File
 
@@ -20,9 +23,14 @@ handler = logging.FileHandler(filename='dizzilog.log', encoding='utf-8', mode='w
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-PREFIX = ";"
+#PREFIX = ";"
 OWNER_IDS = [134760463811477504]
 COGS = [path.split("\\")[-1][:-3] for path in glob("./lib/cogs/*.py")]
+IGNORE_EXCEPTIONS = (CommandNotFound, BadArgument, DisabledCommand)
+
+def get_prefix(bot, message):
+    prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
+    return when_mentioned_or(prefix)(bot, message)
 
 class Ready(object):
     def __init__(self):
@@ -38,7 +46,7 @@ class Ready(object):
 
 class Bot(BotBase):
     def __init__(self):
-        self.prefix = PREFIX
+        #self.prefix = PREFIX
         self.ready = False
         self.cogs_ready = Ready()
         
@@ -47,7 +55,7 @@ class Bot(BotBase):
         db.autosave(self.scheduler)
         
         super().__init__(
-            command_prefix=PREFIX,
+            command_prefix=get_prefix,
             owner_ids=OWNER_IDS,
             intents=Intents.all()
         )
@@ -80,6 +88,8 @@ class Bot(BotBase):
             else:
                 await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
         
+        
+        
     async def on_connect(self):
         print (" Dizzi logged in as {0.user}".format(bot))
         
@@ -93,10 +103,24 @@ class Bot(BotBase):
     
     #do not change on_command_error from passing on CommandNotFound
     async def on_command_error(self, ctx, exc):
-        if isinstance(exc, CommandNotFound):
+        if any([isinstance(exc, CommandNotFound) for error in IGNORE_EXCEPTIONS]):
             pass
+            
+        elif isinstance(exc, MissingRequiredArgument):
+            await ctx.send("One or more required arguments are missing")
+            
+        elif isinstance(exc, CommandOnCooldown):
+            await ctx.send(f"Cool it! Try again in {exc.retry_after:,.2f} seconds.")
+            
+        elif isinstance(exc, CheckFailure):
+            await ctx.send("Hey! You don't have permission to do that!")
+            
         elif hasattr(exc, "original"):
-            raise exc.original
+            if isinstance(exc.original, Forbidden):
+                await ctx.send("I do not have permission to do that!")
+            else:
+                raise exc.original
+                
         else:
             raise exc
     
@@ -105,7 +129,7 @@ class Bot(BotBase):
             self.scheduler.start()
 
             while not self.cogs_ready.all_ready():
-                await sleep(0.5)
+                await sleep(3)
                 
             self.ready = True
             print("Dizzi is ready")
@@ -116,5 +140,6 @@ class Bot(BotBase):
     async def on_message(self, message):
         if not message.author.bot:
             await self.process_commands(message)
+
 
 bot = Bot()
