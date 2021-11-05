@@ -20,7 +20,10 @@ class Time(Cog):
     def __init__(self, bot):
         self.bot = bot
         
-    @command(name="timezone", aliases=["tz"], brief="Convert a given time in a timezone to HST, PST, and JST.", usage="`timezone now` - gives the current time in JST/HST/PST\n`timezone <arg>` - Timezone conversion. `arg` is a time (number from 1-24) and a valid timezone. It also optionally accepts AM/PM.\nExample: `timezone 8PM pst`")
+    @command(name="timezone",
+            aliases=["tz"],
+            brief="Convert a given time in a timezone to HST, PST, and JST.",
+            usage="`*PREF*timezone now` - gives the current time in JST/HST/PST\n`*PREF*timezone <arg>` - Timezone conversion. `<arg>` is a time (number from 1-24) and a valid timezone. It also optionally accepts AM/PM.\nExample: `*PREF*timezone 8PM pst`")
     async def timezoneconverter(self, ctx, *, arg):
         """Convert a specific time in a timezone to HST, PST, and JST. There are a few timezones available to convert from, but for now it only converts to HST/PST/JST.
         

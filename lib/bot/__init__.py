@@ -1,33 +1,42 @@
 from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from discord.ext.commands import Bot as BotBase
-from discord.errors import HTTPException, Forbidden
-from discord.ext.commands import CommandNotFound, BadArgument, MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure
-from discord.ext.commands import Context
-from discord import Intents
 from glob import glob
 
-from discord.ext.commands import when_mentioned_or, command, has_permissions
+from discord import Intents, Embed, File
+from discord.ext.commands import (
+    Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
+    CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
+    command, has_permissions
+)
+from discord.errors import (
+    HTTPException, Forbidden
+)
+#from discord.ext.commands import CommandNotFound, BadArgument, MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure
+#from discord.ext.commands import Context
+#from discord.ext.commands import when_mentioned_or, command, has_permissions
 
-from ..db import db
-
+#IF SOMETHING'S BROKEN IT'S PROBABLY HERE from discord.ext import commands
 #import discord
-from discord.ext import commands
-from discord import Embed, File
+#from discord import Embed, File
+
+import logging
+from ..db import db
+from ..dizzidb import dbsetup
 
 #the following is cut and paste from the library tutorial for logging, outputs dizzilog.log
-import logging
+
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='dizzilog.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-#PREFIX = ";"
 OWNER_IDS = [134760463811477504]
 COGS = [path.split("\\")[-1][:-3] for path in glob("./lib/cogs/*.py")]
+#exceptions that will be ignored
 IGNORE_EXCEPTIONS = (CommandNotFound, BadArgument, DisabledCommand)
 
+#gets the set prefix for the bot, see settings cog
 def get_prefix(bot, message):
     prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
     return when_mentioned_or(prefix)(bot, message)
@@ -46,7 +55,6 @@ class Ready(object):
 
 class Bot(BotBase):
     def __init__(self):
-        #self.prefix = PREFIX
         self.ready = False
         self.cogs_ready = Ready()
         
@@ -140,6 +148,12 @@ class Bot(BotBase):
     async def on_message(self, message):
         if not message.author.bot:
             await self.process_commands(message)
+
+
+    #events for when the bot joins a guild
+    async def on_guild_join(self, guild):
+        print(f"Joined guild {guild.name} ({guild.id}). Adding members to database...")
+        dbsetup(guild)
 
 
 bot = Bot()

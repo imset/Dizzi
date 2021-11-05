@@ -1,30 +1,30 @@
-from discord.ext.commands import Cog
-from discord.ext.commands import command
-from discord import Embed
-#for timezone handling
-from datetime import date
-from datetime import datetime, timedelta
-import pytz
-from pytz import timezone
-from random import choice, randint
-from discord import Member
-from discord.errors import HTTPException
 from aiohttp import request
 import asyncio
-from mediawiki import MediaWiki
-from mediawiki import exceptions
+from mediawiki import (
+    MediaWiki, exceptions
+)
+
+from discord import Embed, Member
+from discord.errors import HTTPException
+from discord.ext.commands import (
+    Cog, command
+)
 
 #defines the bot's embed color
 DIZZICOLOR = 0x2c7c94
 
-
+#Currently this cog has no function
 
 class Fightan(Cog):
     def __init__(self, bot):
         self.bot = bot
         
 
-    @command(name="strive", aliases=["ggs"], brief="This command does not yet function", hidden=True, enabled=False)
+    @command(name="strive",
+            aliases=["ggs"],
+            brief="This command does not yet function",
+            hidden=True,
+            enabled=False)
     async def strive_search(self, ctx, *, page: str):
         dl = MediaWiki(user_agent='py-Dizzi-Discord-Bot',url="http://www.dustloop.com/wiki/api.php")
         message = await ctx.send(f"Searching {page.title()} on Strive Dustloop")

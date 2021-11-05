@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS avatarhistory (
 	Store4 text DEFAULT ""
 );
 
-CREATE TABLE IF NOT EXISTS reactioncounter (
-	UserGuildID text PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS emojicount (
+	dbid text PRIMARY KEY,
 	reactiondict text DEFAULT "{}"
 );

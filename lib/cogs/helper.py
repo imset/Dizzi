@@ -2,16 +2,22 @@ from typing import Optional
 
 from discord import Embed
 from discord.utils import get
-from discord.ext.commands import Cog
-from discord.ext.commands import command
-from discord.ext.menus import MenuPages, ListPageSource
+from discord.ext.commands import (
+    Cog, command
+)
+from discord.ext.menus import (
+    MenuPages, ListPageSource
+)
+
+from ..db import db
+from ..dizzidb import dbprefix
 
 DIZZICOLOR = 0x2c7c94
 
 #create a list of all the commands
 
-def syntax(command):
-    cmd_and_aliases = "|".join([str(command), *command.aliases])
+def syntax(command, guild):
+    cmd_and_aliases = dbprefix(guild) + "|".join([str(command), *command.aliases])
     params = []
     
     for key, value in command.params.items():
@@ -32,7 +38,7 @@ class HelpMenu(ListPageSource):
         offset = (menu.current_page*self.per_page) + 1
         len_data = len(self.entries)
         
-        embed = Embed(title="Dizzi's Command Help", description="What can I help you with? \n(Hint: use help <command> for more info about a specific command, or help <group> to get info about a group of commands)",color=DIZZICOLOR)
+        embed = Embed(title="Dizzi's Command Help", description=f"What can I help you with? \n(use {dbprefix(self.ctx.guild)}help <command> for more info about a specific command)",color=DIZZICOLOR)
         
         embed.set_thumbnail(url=self.ctx.guild.me.avatar_url)
         embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} commands.")
@@ -55,7 +61,7 @@ class HelpMenu(ListPageSource):
         
         for entry in entries:
             #creates the field list that will be used in write_page to add fields
-            fields.append((entry.brief or "No description", syntax(entry), entry.cog_name, entry.hidden, entry.name, entry.enabled))
+            fields.append((entry.brief or "No description", syntax(entry, self.ctx.guild), entry.cog_name, entry.hidden, entry.name, entry.enabled))
             
         #sort fields list by cog_name and syntax(entry)
         fields = sorted(fields, key=lambda x: (x[2], x[4]))
@@ -70,12 +76,17 @@ class Helper(Cog):
         self.bot.remove_command("help")
         
     async def cmd_help(self, ctx, command):
-        embed = Embed(title=f"Help for: `{str(command).title()}`", description=syntax(command), color=DIZZICOLOR)
+        embed = Embed(title=f"Help for: `{str(command).title()}`", description=syntax(command, ctx.guild), color=DIZZICOLOR)
         embed.add_field(name="**————————————————\nCommand Description\n————————————————**", value=f"{command.help}", inline=False)
-        embed.add_field(name="**————————————————\nCommand Usage\n————————————————**", value=f"{command.usage}", inline=False)
+        #the following is used to replace *PREF* in usage docs with the actual prefix
+        tmpusage = command.usage.replace("*PREF*", dbprefix(ctx.guild))
+        embed.add_field(name="**————————————————\nCommand Usage\n————————————————**", value=f"{tmpusage}", inline=False)
         await ctx.send(embed=embed)
     
-    @command(name="help", brief="Get help with a specific commanad", usage="`help` - gives you a list of all commands\n`help <cmd>` - gives you help documents for a `cmd`, where `cmd` is any command that Dizzi understands.\nExample: `help help` (this should look familiar)", hidden=True)
+    @command(name="help",
+            brief="Get help with a specific commanad",
+            usage="`*PREF*help` - gives you a list of all commands\n`{dbprefix(ctx.guild)}help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)",
+            hidden=True)
     async def show_help(self, ctx, cmd: Optional[str]):
         """What kind of person looks up help for the help command?"""
         

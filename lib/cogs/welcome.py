@@ -8,6 +8,8 @@ from discord.ext import commands
 from discord import Embed, File
 
 from ..db import db
+from ..dizzidb import Dizzidb
+
 
 class Welcome(Cog):
 	def __init__(self, bot):
@@ -20,17 +22,21 @@ class Welcome(Cog):
 
 	@Cog.listener()
 	async def on_member_join(self, member):
-		#userandguildlist = [str(member.id), str(member.guild.id)]
-		uguild = f"{member.id}.{member.guild.id}"
-		welcomechannel = db.field("SELECT Welcome FROM guildsettings WHERE GuildID = ?", member.guild.id)
-		db.execute("INSERT or IGNORE INTO exp (UserID) VALUES (?)", member.id)
-		db.execute("INSERT or IGNORE INTO avatarhistory (UserID) VALUES (?)", member.id)
-		db.execute("INSERT or IGNORE INTO reactioncounter (UserGuildID) VALUES (?)", uguild)
+		#create a Dizzidb object for the user who joined
+		userdb = Dizzidb(member, member.guild)
+		#find the welcome channel
+		welcomechannel = db.field("SELECT Welcome FROM guildsettings WHERE GuildID = ?", userdb.gid)
+		#insert the user into the relevant tables when they join
+		db.execute("INSERT or IGNORE INTO exp (UserID) VALUES (?)", userdb.uid)
+		db.execute("INSERT or IGNORE INTO avatarhistory (UserID) VALUES (?)", userdb.uid)
+		db.execute("INSERT or IGNORE INTO emojicount (dbid) VALUES (?)", userdb.dbid)
+		#welcome in the welcome channel
 		if welcomechannel != "":
 			await self.bot.get_channel(int(welcomechannel)).send(f"Welcome to **{member.guild.name}**, {member.mention}!")
 
 	@Cog.listener()
 	async def on_member_remove(self, member):
+		#remove member from tables when they leave the server
 		db.execute("DELETE FROM exp WHERE UserID = ?", member.id)
 
 
