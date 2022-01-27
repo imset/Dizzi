@@ -58,17 +58,20 @@ def scriptexec(path):
     with open(path, "r", encoding="utf-8") as script:
         cur.executescript(script.read())
 
-#custom - try to add a column
+#custom - try to add column
 def addcolumn(table, column, dflt):
     try:
         cur.execute(f"ALTER TABLE {table} ADD COLUMN `{column}` int DEFAULT {dflt}")
     except:
         pass
 
-#custom - returns the user's emote dictionary for the emoji tracking system
-'''
-def emotedict(userid, guildid) -> dict:
-    uguild = f"{userid}.{guildid}"
-    userredict = ast.literal_eval(db.field("SELECT reactiondict FROM reactioncounter WHERE UserGuildID = ?", uguild))
-    return userredict
-'''
+#custom - check if entry exists
+def dbexist(table, col, memberid) -> bool:
+    #note to self in the future: the weird formatting on the (str(memberid),) is because, for some reason, this shit needs to be a tuple
+    existdb = cur.execute(f"SELECT COUNT(1) FROM {table} WHERE `{col}` = ?", (str(memberid),))
+    exist = cur.fetchone()[0]
+    #the most useless if statement ever, preserved here as a reminder of my own ignorance.
+    if exist == 0:
+        return False
+    else:
+        return True

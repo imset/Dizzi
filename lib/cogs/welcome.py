@@ -33,7 +33,7 @@ class Welcome(Cog):
 		#welcome in the welcome channel
 		if welcomechannel != "":
 			await self.bot.get_channel(int(welcomechannel)).send(f"Welcome to **{member.guild.name}**, {member.mention}!")
-
+	
 	@Cog.listener()
 	async def on_member_remove(self, member):
 		#remove member from tables when they leave the server

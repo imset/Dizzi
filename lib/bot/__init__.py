@@ -2,7 +2,7 @@ from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from glob import glob
 
-from discord import Intents, Embed, File
+from discord import Intents, Embed, File, Game, Activity, ActivityType
 from discord.ext.commands import (
     Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
     CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
@@ -65,7 +65,8 @@ class Bot(BotBase):
         super().__init__(
             command_prefix=get_prefix,
             owner_ids=OWNER_IDS,
-            intents=Intents.all()
+            intents=Intents.all(),
+            activity=Game(name=";help")
         )
     
     def setup(self):
@@ -113,12 +114,25 @@ class Bot(BotBase):
     async def on_command_error(self, ctx, exc):
         if any([isinstance(exc, CommandNotFound) for error in IGNORE_EXCEPTIONS]):
             pass
+
+        elif isinstance(exc, DisabledCommand):
+            pass
             
         elif isinstance(exc, MissingRequiredArgument):
             await ctx.send("One or more required arguments are missing")
             
         elif isinstance(exc, CommandOnCooldown):
-            await ctx.send(f"Cool it! Try again in {exc.retry_after:,.2f} seconds.")
+            print("Command Cooldown Hit")
+            retry = exc.retry_after
+            if retry < 60:
+                print("Seconds")
+                await ctx.send(f"Cool it! Try again in {retry:,.2f} seconds.")
+            elif (retry/60) < 60:
+                print("minutes")
+                await ctx.send(f"Cool it! Try again in {(retry/60):,.2f} minutes.")
+            elif (retry/360) < 24:
+                print("hours")
+                await ctx.send(f"Cool it! Try again in {(retry/360):,.2f} hours.")
             
         elif isinstance(exc, CheckFailure):
             await ctx.send("Hey! You don't have permission to do that!")
@@ -151,9 +165,12 @@ class Bot(BotBase):
 
 
     #events for when the bot joins a guild
+    #currently this is not needed since the reaction database adds and updates automatically.
+    '''
     async def on_guild_join(self, guild):
         print(f"Joined guild {guild.name} ({guild.id}). Adding members to database...")
         dbsetup(guild)
+    '''
 
 
 bot = Bot()

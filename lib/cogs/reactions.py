@@ -11,6 +11,23 @@ from ..db import db
 from ..dizzidb import Dizzidb
 
 
+def has_emojis(message) -> bool:
+	if emojis.count(message.content) > 0:
+		return True
+	else:
+		ces = re.findall(r'<a?:\w*:\d*>', message.content)
+		if ces != []:
+			return True
+		else:
+			return False
+
+def has_reactions(message) -> bool:
+	if message.reactions != []:
+		return True
+	else:
+		return False
+
+
 class Reactions(Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -24,19 +41,25 @@ class Reactions(Cog):
 
 	@Cog.listener()
 	async def on_message(self, message):
-		#used to check a user's message for emojis
+		#used to check a user's message for emojis, I should make it only fire if there's an emoji in it
 		#ignore bots
-		if (not message.author.bot):
+		if (not message.author.bot) and (has_emojis(message)):
 			#create a userdb
 			userdb = Dizzidb(message.author, message.guild)
 
 			#used to find custom emojis in the message and add them to the emojiset
-			emojiset = re.findall(r'<:\w*:\d*>', message.content)
+			emojiset = re.findall(r'<a?:\w*:\d*>', message.content)
+
+			#it may be possible to optimize that regex so the below if/for loop, and the entire emoji library, isn't necessary
 
 			#used to find default emojis in the message and add them to the emojiset
 			if emojis.count(message.content) > 0:
 				for e in emojis.get(message.content):
 					emojiset.append(e)
+
+			#if the dbid does not exist, create it
+			if not db.dbexist("emojicount", "dbid", userdb.dbid):
+				db.execute("INSERT or IGNORE INTO emojicount (dbid) VALUES (?)", userdb.dbid)
 
 			#grabs the user's current emoji dictionary from the db
 			uemojidict = userdb.dbludict("emojicount", "emojidict", userdb.dbid)
@@ -55,7 +78,7 @@ class Reactions(Cog):
 	async def on_reaction_add(self, reaction, user):
 		#monitor reactions for the emojidb
 		#ignore bots
-		if not user.bot and not reaction.message.author.bot:
+		if (not user.bot) and (not reaction.message.author.bot):
 			#create userdb object
 			userdb = Dizzidb(user, user.guild)
 			#if a reaction can be formatted as the try, it's custom. Otherwise, it's a default emoji.
@@ -64,6 +87,11 @@ class Reactions(Cog):
 			except:
 				reactiondata = f"{reaction.emoji}"
 			
+
+			#if the dbid does not exist, create it
+			if not db.dbexist("emojicount", "dbid", userdb.dbid):
+				db.execute("INSERT or IGNORE INTO emojicount (dbid) VALUES (?)", userdb.dbid)
+
 			#get user's emoji dictionary
 			uemojidict = userdb.dbludict("emojicount", "emojidict", userdb.dbid)
 			

@@ -25,3 +25,15 @@ CREATE TABLE IF NOT EXISTS emojicount (
 	dbid text PRIMARY KEY,
 	reactiondict text DEFAULT "{}"
 );
+
+CREATE TABLE IF NOT EXISTS alert (
+	dbid text PRIMARY KEY,
+	alertset text DEFAULT "[]"
+);
+
+CREATE TABLE IF NOT EXISTS birthday (
+	dbid text PRIMARY KEY,
+	monthday text DEFAULT "",
+	year text DEFAULT "",
+	wished integer DEFAULT "0"
+);
