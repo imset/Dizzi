@@ -280,7 +280,7 @@ class Birthday(Cog):
                 return
 
     #birthday task loop
-    @tasks.loop(seconds = 5.0)
+    @tasks.loop(minutes = 60.0)
     async def bdchk(self):
         #check if there's any birthdays today
         todaybds = db.column("SELECT dbid FROM birthday WHERE monthday = ?", str(date.today().strftime("%m/%d")))
@@ -289,8 +289,7 @@ class Birthday(Cog):
         else:
             for i in todaybds:
                 wished = db.field("SELECT wished FROM birthday WHERE dbid = ?", i)
-                # if wished == 0 and datetime.now().hour >= 8:
-                if wished == 0:
+                if wished == 0 and datetime.now().hour >= 8:
                     splitset = i.split(".")
                     bduser = await self.bot.fetch_user(splitset[0])
                     bdguild = await self.bot.fetch_guild(splitset[1])
@@ -316,11 +315,10 @@ class Birthday(Cog):
                     wished = 1
                     db.execute("UPDATE birthday SET wished = ? WHERE dbid = ?", 1, i)
 
-    @tasks.loop(seconds = 5.0)
+    @tasks.loop(minutes = 60.0)
     async def wishedreset(self):
-        return
-        # if datetime.now().hour < 8:
-        #     db.execute("UPDATE birthday SET wished = ?", 0)
+        if datetime.now().hour < 8:
+            db.execute("UPDATE birthday SET wished = ?", 0)
 
     @Cog.listener()
     async def on_ready(self):
