@@ -5,3 +5,4 @@ lib/bot/token.0
 lib/cogs/searchtoken.0
 lib/bot/testtoken.0
 *.log
+*.0

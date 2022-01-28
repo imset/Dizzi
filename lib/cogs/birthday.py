@@ -1,4 +1,4 @@
-from aiohttp import request
+from aiohttp import request, ClientSession
 import asyncio
 from random import (
     choice, randint
@@ -8,10 +8,11 @@ from mediawiki import (
 )
 
 from discord import (
-    Member, Embed
+    Member, Embed, File
 )
+
 from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument
+    Cog, command, cooldown, BucketType, BadArgument, MemberNotFound
 )
 
 from discord.ext import tasks
@@ -25,6 +26,8 @@ from discord.errors import HTTPException
 from datetime import date, datetime
 
 import re
+
+import io
 
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
@@ -55,7 +58,7 @@ class BdMenu(ListPageSource):
         i = offset
         for member, value in fields:
             #generates the fields with the emoji and its ranking
-            embed.add_field(name=f"**————————————————**\n", value=f"{member.name}: {value}", inline=False)
+            embed.add_field(name=f"————————————————\n", value=f"**{member.display_name}: {value}**", inline=False)
             i += 1
 
         return embed
@@ -85,6 +88,10 @@ class Birthday(Cog):
             usage="`*PREF*birthdayadd <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`")
     async def bd_add(self, ctx, member: Member, *, day: str):
         """Add a user to Dizzi's birthday database"""
+
+        # if isinstance(exc, MemberNotFound):
+        #     await ctx.send("Sorry, I don't understand")
+
         if member.bot == True and member.name == "Dizzi":
             await ctx.send(f"I'm flattered, but I already know my birthday is October 3rd!")
             return
@@ -204,6 +211,10 @@ class Birthday(Cog):
         else:
             await ctx.send(f"Alright, I've added {finalmonthday} as {member.name}'s birthday. I'll be sure to wish them a happy birthday!")
 
+    @bd_add.error
+    async def bd_add_error(self, ctx, exc):
+        if isinstance(exc, MemberNotFound):
+            await ctx.send("Sorry, something went wrong processing your command. Make sure you @ the user you want to add a birthday for and use a valid date.")
 
     @command(name="birthdaylist",
             aliases=["bdlist", "bdl"],
@@ -234,7 +245,11 @@ class Birthday(Cog):
         i = 0
         while i < len(bdconvset):
             userid = bdconvset[i][0].split('.')[0]
-            u = await self.bot.fetch_user(userid)
+            guildid = bdconvset[i][0].split('.')[1]
+            #get member instead of user
+            guild = await self.bot.fetch_guild(guildid)
+            #u = await self.bot.fetch_user(userid)
+            u = await guild.fetch_member(userid)
             bdconvset[i][0] = u
             i += 1
 
@@ -265,7 +280,7 @@ class Birthday(Cog):
                 return
 
     #birthday task loop
-    @tasks.loop(minutes = 60.0)
+    @tasks.loop(seconds = 5.0)
     async def bdchk(self):
         #check if there's any birthdays today
         todaybds = db.column("SELECT dbid FROM birthday WHERE monthday = ?", str(date.today().strftime("%m/%d")))
@@ -274,23 +289,38 @@ class Birthday(Cog):
         else:
             for i in todaybds:
                 wished = db.field("SELECT wished FROM birthday WHERE dbid = ?", i)
-                if wished == 0 and datetime.now().hour >= 8:
+                # if wished == 0 and datetime.now().hour >= 8:
+                if wished == 0:
                     splitset = i.split(".")
                     bduser = await self.bot.fetch_user(splitset[0])
                     bdguild = await self.bot.fetch_guild(splitset[1])
                     userdb = Dizzidb(bduser, bdguild)
                     welcomechannel = db.field("SELECT Welcome FROM guildsettings WHERE GuildID = ?", userdb.gid)
                     ping = await self.bot.fetch_user(userdb.uid)
-                    print(f"Happy birthday dear {ping.display_name}")
+                    print(f"Happy birthday to {ping.display_name}")
                     channelpush = await self.bot.fetch_channel(int(welcomechannel))
-                    await channelpush.send(f"**Today is {ping.mention}'s birthday**!")
+
+                    await channelpush.send(f"**@everyone 🎉Today is {ping.mention}'s birthday!🎉**")
+
+                    with open("./lib/bot/kawaiired.0", "r", encoding="utf=8") as tf:
+                        krtoken = tf.read()
+                    URL = f"https://kawaii.red/api/gif/party/token={krtoken}/"
+                    async with request("GET", URL, headers={}) as response:
+                        jsondata = await response.json()
+
+                        async with ClientSession() as session:
+                            async with session.get(jsondata['response']) as resp:
+                                data = io.BytesIO(await resp.read())
+                                await channelpush.send(file=File(data, 'celebrate.gif'))
+
                     wished = 1
                     db.execute("UPDATE birthday SET wished = ? WHERE dbid = ?", 1, i)
 
-    @tasks.loop(minutes = 60.0)
+    @tasks.loop(seconds = 5.0)
     async def wishedreset(self):
-        if datetime.now().hour < 8:
-            db.execute("UPDATE birthday SET wished = ?", 0)
+        return
+        # if datetime.now().hour < 8:
+        #     db.execute("UPDATE birthday SET wished = ?", 0)
 
     @Cog.listener()
     async def on_ready(self):

@@ -107,7 +107,8 @@ class Bot(BotBase):
         
     async def on_error(self, err, *args, **kwargs):
         if err == "on_command_error":
-            await args[0].send("Something went wrong.")
+            #await args[0].send("Something went wrong.")
+            await args[0].message.add_reaction("❌")
         raise
     
     #do not change on_command_error from passing on CommandNotFound
