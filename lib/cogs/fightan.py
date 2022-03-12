@@ -43,7 +43,7 @@ class Fightan(Cog):
         except:
             pass
         
-        await message.edit(content="", embed=embed)
+        updated_member = await message.edit(content="", embed=embed)
 
     @Cog.listener()
     async def on_ready(self):

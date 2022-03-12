@@ -62,9 +62,9 @@ class Settings(Cog):
 		try:
 			dbsetup(ctx.guild)
 		except:
-			await message.edit(content="Sorry, something went wrong.")
+			updated_member = await message.edit(content="Sorry, something went wrong.")
 			return
-		await message.edit(content=f"Success! {ctx.guild.name} is all set up.")
+		updated_member = await message.edit(content=f"Success! {ctx.guild.name} is all set up.")
 
 	@command(name="emoteservhist",
 			aliases=["esh"],
@@ -77,9 +77,9 @@ class Settings(Cog):
 		for channel in ctx.guild.text_channels:
 			if channel == chnl:
 				continue
-			await progress.edit(content=f"Analyzing last 1 million messages in {channel.name}...")
+			updated_member = await progress.edit(content=f"Analyzing last 1 million messages in {channel.name}...")
 			messages = await channel.history(limit=1_000_000).flatten()
-			await progress.edit(content=f"Parsing recorded {channel.name} data for emojis...")
+			updated_member = await progress.edit(content=f"Parsing recorded {channel.name} data for emojis...")
 			for msg in messages:
 				if msg.author.bot != True:
 					if has_emojis(msg):
@@ -139,7 +139,7 @@ class Settings(Cog):
 								uemojidict[reactiondata] += 1
 							db.execute("UPDATE emojicount SET emojidict = ? WHERE dbid = ?", str(uemojidict), userdb.dbid)
 
-		await progress.edit(content="Done!")
+		updated_member = await progress.edit(content="Done!")
 
 	@command(name="emotechannelhis",
 			aliases=["ech"],
@@ -148,14 +148,14 @@ class Settings(Cog):
 	async def emotechanhist(self, ctx, channel: TextChannel):
 		#using this command will cause the bot to read through the channel history and populate the emote history database
 		progress = await ctx.send("Starting...")
-		await progress.edit(content=f"Counting number of messages in {channel.name}...")
+		updated_member = await progress.edit(content=f"Counting number of messages in {channel.name}...")
 		#first, the bot will count the number of messages in the channel.
 		count = 0
 		async for _ in channel.history(limit=None):
 			count += 1
 		print(f"Message number for {channel.name}: {count}")
 
-		await progress.edit(content=f"Starting counting process...")
+		updated_member = await progress.edit(content=f"Starting counting process...")
 		time.sleep(2)
 		firstbool = True
 		epercent = 0
@@ -178,9 +178,9 @@ class Settings(Cog):
 
 			beforemsg = messages[-1]
 			epercent += 5
-			await progress.edit(content=f"Completion for {channel.name} Emoji History: {epercent}\%")
+			updated_member = await progress.edit(content=f"Completion for {channel.name} Emoji History: {epercent}\%")
 			count -= (count/100)
-		await progress.edit(content="Done!")
+		updated_member = await progress.edit(content="Done!")
 
 
 

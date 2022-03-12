@@ -296,10 +296,10 @@ class Birthday(Cog):
                     userdb = Dizzidb(bduser, bdguild)
                     welcomechannel = db.field("SELECT Welcome FROM guildsettings WHERE GuildID = ?", userdb.gid)
                     ping = await self.bot.fetch_user(userdb.uid)
-                    print(f"Happy birthday to {ping.display_name}")
+                    #print(f"Happy birthday to {ping.display_name}")
                     channelpush = await self.bot.fetch_channel(int(welcomechannel))
 
-                    await channelpush.send(f"**@everyone 🎉Today is {ping.mention}'s birthday!🎉**")
+                    await channelpush.send(f"**🎉Today is {ping.mention}'s birthday!🎉**")
 
                     with open("./lib/bot/kawaiired.0", "r", encoding="utf=8") as tf:
                         krtoken = tf.read()

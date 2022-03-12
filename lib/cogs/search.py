@@ -36,35 +36,35 @@ def sauce_request(url) -> dict:
 	results = sauce.from_url(url)
 	best = results[0]
 
-	# vallist = []
-	# keylist = []
+	vallist = []
+	keylist = []
 	reqdict = {}
 
-	# if bool(results):
-	# 	for i in dir(results[0]):
-	# 		if not str(i).startswith("_"):
-	# 			reqdict[str(i)] = i
-				# keylist.append(str(i))
-				# vallist.append(i)
+	if bool(results):
+		for i in dir(results[0]):
+			if not str(i).startswith("_"):
+				reqdict[str(i)] = i
+				keylist.append(str(i))
+				vallist.append(i)
 
 	print 
 
-	# if bool(results):
-	# 	for i in get_attrs(best):
-	# 		print(best.i)
+	if bool(results):
+		for i in get_attrs(best):
+			#print(best.i)
+			pass
+		reqdict = dict(zip(keylist, vallist))
 
-		#reqdict = dict(zip(keylist, vallist))
+	reqdict = {
+		"number": len(results),
+		"bool": bool(results),
+		"thumb": best.thumbnail,
+		"similarity": best.similarity,
+		"title": best.title,
+		"url": best.urls,
+		"author": best.author
+	}
 
-	# reqdict = {
-	# 	"number": len(results),
-	# 	"bool": bool(results),
-	# 	"thumb": best.thumbnail,
-	# 	"similarity": best.similarity,
-	# 	"title": best.title,
-	# 	"url": best.urls,
-	# 	"author": best.author
-	# 	"pixiv": best.pixiv
-	# }
 	return reqdict
 
 #get img url in other ways if not provided
@@ -114,48 +114,48 @@ class Search(Cog):
 			brief="Highly detailed reverse lookup specifically for anime, powered by trace.moe",
 			usage="`*PREF*anisource <img>` - Searches `<img>` on trace.moe. `<img>` can be an image url, an image uploaded with the command, or a replied image.\n"
 			"Example: `*PREF*anisource https://i.imgur.com/zmXLgvW.gif`")
-	# @max_concurrency(1, per=BucketType.default, wait=True)
-	# @cooldown(10, 86400, BucketType.member)
+	@max_concurrency(1, per=BucketType.default, wait=True)
+	@cooldown(10, 86400, BucketType.member)
 	async def anisource(self, ctx, img: Optional[str]):
-	# 	"""
-	# 	Search an anime picture on Trace.moe, and get back the source and its video context.
-	# 	Note: trace.moe usage limitations require that you can only use this command a limited number of times per day (currently 10).
-	# 	"""
+		"""
+		Search an anime picture on Trace.moe, and get back the source and its video context.
+		Note: trace.moe usage limitations require that you can only use this command a limited number of times per day (currently 10).
+		"""
 
-	# 	pref = dbprefix(ctx.guild)
+		pref = dbprefix(ctx.guild)
 
-	# 	if img is None:
-	# 		img = await get_imgurl(ctx)
+		if img is None:
+			img = await get_imgurl(ctx)
 
-	# 	sourceurl = f"https://api.trace.moe/search?cutBorders&url={img}"
+		sourceurl = f"https://api.trace.moe/search?cutBorders&url={img}"
 		
-	# 	async with request("GET", sourceurl, headers={}) as response:
-	# 		if response.status == 200:
-	# 			data = await response.json()
-	# 			tmresult = data["result"][0]
+		async with request("GET", sourceurl, headers={}) as response:
+			if response.status == 200:
+				data = await response.json()
+				tmresult = data["result"][0]
 
-	# 			tmtitle = tmresult["filename"]
-	# 			tmsimi = tmresult["similarity"]
-	# 			tmvideo = tmresult["video"]
-	# 			if len(tmvideo) > 250:
-	# 				tmvideo = "[Video URL too long]"
-	# 			tmimage = tmresult["image"]
-	# 			tmepi = tmresult["episode"]
+				tmtitle = tmresult["filename"]
+				tmsimi = tmresult["similarity"]
+				tmvideo = tmresult["video"]
+				if len(tmvideo) > 250:
+					tmvideo = "[Video URL too long]"
+				tmimage = tmresult["image"]
+				tmepi = tmresult["episode"]
 
-	# 			embed = Embed(title=f"Best Guess: {tmtitle}", description=f"Episode: {tmepi}", color=DIZZICOLOR)
-	# 			embed.add_field(name=f"Video: {tmvideo}", value=f"Similarity: {tmsimi}")
-	# 			embed.set_thumbnail(url=tmimage)
-	# 			embed.add_field(name="Note:", value="Because of limitations with the free version of Trace.moe, you can only use this command 10x per 24hr period.",
-	# 							inline=False)
-	# 			embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nYou can also try {pref}source / {pref}s for a more general search.")
+				embed = Embed(title=f"Best Guess: {tmtitle}", description=f"Episode: {tmepi}", color=DIZZICOLOR)
+				embed.add_field(name=f"Video: {tmvideo}", value=f"Similarity: {tmsimi}")
+				embed.set_thumbnail(url=tmimage)
+				embed.add_field(name="Note:", value="Because of limitations with the free version of Trace.moe, you can only use this command 10x per 24hr period.",
+								inline=False)
+				embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nYou can also try {pref}source / {pref}s for a more general search.")
 
 				
-	# 			await ctx.send(embed=embed)
-	# 		elif response.status == 402:
-	# 			await ctx.send(f"Dizzi has maxed out on its monthly alotted searches with Trace.Moe. Try using {pref}source / {pref}s to search instead.")
-	# 		else:
-	# 			await ctx.send(f"API returned a {response.status} status. Try using {pref}source / {pref}s to search instead.")
-		await ctx.send("The source commands are currently undergoing maintainence. This is proving more difficult than expected.\n Try again later!")
+				await ctx.send(embed=embed)
+			elif response.status == 402:
+				await ctx.send(f"Dizzi has maxed out on its monthly alotted searches with Trace.Moe. Try using {pref}source / {pref}s to search instead.")
+			else:
+				await ctx.send(f"API returned a {response.status} status. Try using {pref}source / {pref}s to search instead.")
+		#await ctx.send("https://www.youtube.com/watch?v=G2od3Z6dqO0")
 
 	@command(name="source",
 			aliases=["sauce", "s"],
@@ -165,47 +165,47 @@ class Search(Cog):
 	@max_concurrency(1, per=BucketType.default, wait=True)
 	@cooldown(10, 86400, BucketType.member)
 	async def source(self, ctx, img: Optional[str]):
-		# """
-		# Search a picture on SauceNao, and get back the closest match to its source.
-		# If you have a screenshot from an anime, you can also use ;as to use the more powerful Trace.moe search.
-		# Note: trace.moe usage limitations require that you can only use this command a limited number of times per day (currently 10).
-		# """
+		"""
+		Search a picture on SauceNao, and get back the closest match to its source.
+		If you have a screenshot from an anime, you can also use ;as to use the more powerful Trace.moe search.
+		Note: trace.moe usage limitations require that you can only use this command a limited number of times per day (currently 10).
+		"""
 
-		# pref = dbprefix(ctx.guild)
+		pref = dbprefix(ctx.guild)
 
-		# #a lot of this is taken from https://stackoverflow.com/questions/66858220/how-do-you-get-the-image-from-message-and-display-it-in-an-embed-discord-py
-		# if img is None:
-		# 	img = await get_imgurl(ctx)
+		#a lot of this is taken from https://stackoverflow.com/questions/66858220/how-do-you-get-the-image-from-message-and-display-it-in-an-embed-discord-py
+		if img is None:
+			img = await get_imgurl(ctx)
 
-		# saucedict = sauce_request(img)
-		# print(saucedict)
+		saucedict = sauce_request(img)
+		print(saucedict)
 
-		# if saucedict == {}:
-		# 	await ctx.send(f"SauceNao couldn't find anything on that image. Sorry!")
-		# 	return
-		# else:
-		# 	saucetitle = saucedict["title"]
-		# 	try:
-		# 		sauceurl = saucedict["urls"][0]
-		# 	except:
-		# 		sauceurl = ""
-		# 	try:
-		# 		sauceauthor = saucedict["author"]
-		# 	except:
-		# 		sauceurl = ""
-		# 	saucesimi = saucedict["similarity"]
+		if saucedict == {}:
+			await ctx.send(f"SauceNao couldn't find anything on that image. Sorry!")
+			return
+		else:
+			saucetitle = saucedict["title"]
+			try:
+				sauceurl = saucedict["url"][0]
+			except:
+				sauceurl = ""
+			try:
+				sauceauthor = saucedict["author"]
+			except:
+				sauceauthor = ""
+			saucesimi = saucedict["similarity"]
 
-		# 	embed = Embed(title=f"Best Guess: {saucetitle}", description=f"URL: {sauceurl}", color=DIZZICOLOR)
-		# 	embed.add_field(name=f"Author: {sauceauthor}", value=f"Similarity: {saucesimi}")
-		# 	print(saucedict["thumbnail"])
-		# 	embed.set_thumbnail(url=saucedict["thumbnail"])
-		# 	embed.add_field(name="Note:", value="Because of limitations with the free version of SauceNao, you can only use this command 10x per 24hr period.",
-		# 					inline=False)
-		# 	embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nSearching for an anime? Try {pref}animesource / {pref}as for a more detailed search.")
+			embed = Embed(title=f"Best Guess: {saucetitle}", description=f"URL: {sauceurl}", color=DIZZICOLOR)
+			embed.add_field(name=f"Author: {sauceauthor}", value=f"Similarity: {saucesimi}")
+			#print(saucedict["thumbnail"])
+			embed.set_thumbnail(url=saucedict["thumb"])
+			embed.add_field(name="Note:", value="Because of limitations with the free version of SauceNao, you can only use this command 10x per 24hr period.",
+							inline=False)
+			embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nSearching for an anime? Try {pref}animesource / {pref}as for a more detailed search.")
 
-		# await ctx.send(embed=embed)
+		await ctx.send(embed=embed)
 
-		await ctx.send("The source commands are currently undergoing maintainence. This is proving more difficult than expected.\n Try again later!")
+		#await ctx.send("https://www.youtube.com/watch?v=G2od3Z6dqO0")
 
 
 def setup(bot):

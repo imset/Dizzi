@@ -41,7 +41,7 @@ class EmojiMenu(ListPageSource):
 
 		#create embed
 		embed = Embed(title=f"{member.name}'s Top Emojis for: {member.guild.name}", description="...", color=DIZZICOLOR)        
-		embed.set_thumbnail(url=member.avatar_url)
+		embed.set_thumbnail(url=member.avatar)
 		embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} Emojis.")
 
 		#i is used for the ranking value of emojis

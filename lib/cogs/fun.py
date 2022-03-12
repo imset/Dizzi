@@ -242,7 +242,7 @@ class Fun(Cog):
             p = wikipedia.page(wikipedia.search(page)[1])
             pgtitle = p.title + " (Closest Match to \"" + page.title() + "\")"
         except exceptions.PageError as e:
-            await message.edit(content=f"I can't find anything on Wikipedia for {page.title()}. Sorry!")
+            updated_member = await message.edit(content=f"I can't find anything on Wikipedia for {page.title()}. Sorry!")
             return
             
         embed = Embed(title=f"{pgtitle}", description=p.summarize(chars=350), color=DIZZICOLOR)
@@ -252,7 +252,7 @@ class Fun(Cog):
         except:
             pass
             
-        await message.edit(content="", embed=embed)
+        updated_member = await message.edit(content="", embed=embed)
 
     @command(name="alert",
             aliases=["tab","tabs"],
@@ -276,6 +276,14 @@ class Fun(Cog):
         alertset.append(userdb.uid)
         db.execute("UPDATE alert SET alertset = ? WHERE dbid = ?", str(alertset), memberdb.dbid)
         await ctx.send(f"Alright, I'll keep track of {member.name} and let you know when they post in {ctx.guild.name} next.")
+
+    @command(name="deflect",
+            brief="Deflect a beam",
+            usage="`*PREF*deflect` - It'll take more than that!\nExample: `*PREF*deflect`")
+    async def alert(self, ctx):
+        """Deflect a beam of energy so that it'll harmlessly hit a mountain in the background instead."""
+        await ctx.send("https://i.imgur.com/MYI8EJh.gif")
+
 
     # @command(name="birthdayadd",
     #         aliases=["bdadd"],
