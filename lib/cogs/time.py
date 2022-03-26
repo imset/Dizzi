@@ -175,7 +175,7 @@ class Time(Cog):
             hst_send = aware_zone.astimezone(hst)
             jst_send = aware_zone.astimezone(jst)
             #send the 3 timezones
-            tzembed = Embed(title="Timezone Conversion: " + zone, description=hour + ":" + min + " " + ampm + " " + zoneshrt + " is:", color=DIZZICOLOR, inline=True) 
+            tzembed = Embed(title="Timezone Conversion: " + zone, description=hour + ":" + min + " " + ampm + " " + zoneshrt + " is:", color=DIZZICOLOR) 
             tzembed.add_field(name="__**HST**__", value = "> " + hst_send.strftime("%I:%M %p"), inline=True)
             tzembed.add_field(name="__**PST**__", value = "> " + pst_send.strftime("%I:%M %p"), inline=True)
             tzembed.add_field(name="__**JST**__", value = "> " + jst_send.strftime("%I:%M %p"), inline=True)

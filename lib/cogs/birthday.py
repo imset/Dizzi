@@ -12,7 +12,7 @@ from discord import (
 )
 
 from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument, MemberNotFound
+    Cog, command, cooldown, BucketType, BadArgument, MemberNotFound, guild_only
 )
 
 from discord.ext import tasks
@@ -86,6 +86,7 @@ class Birthday(Cog):
             aliases=["bdadd", "bda"],
             brief="Add a birthday to the birthdatabase",
             usage="`*PREF*birthdayadd <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`")
+    @guild_only()
     async def bd_add(self, ctx, member: Member, *, day: str):
         """Add a user to Dizzi's birthday database"""
 
@@ -220,6 +221,7 @@ class Birthday(Cog):
             aliases=["bdlist", "bdl"],
             brief="Show the list of birthdays on this server",
             usage="`*PREF*birthdaylist` - Shows the birthday list.\nExample: `*PREF*bdlist`")
+    @guild_only()
     async def bd_list(self, ctx):
         """Show a list of user birthdays on your server."""
 
@@ -263,7 +265,7 @@ class Birthday(Cog):
     async def on_message(self, message):
         #used to check if a user is needed in the alert system
         #ignore bots
-        if (not message.author.bot):
+        if (not message.author.bot) and message.guild != None:
             #create a userdb
             userdb = Dizzidb(message.author, message.guild)
 

@@ -2,7 +2,7 @@ import ast
 import re
 import emojis
 from discord import Embed
-from discord.ext.commands import Cog, command
+from discord.ext.commands import Cog, command, guild_only
 #from discord.ext.commands import command
 from discord.ext.menus import MenuPages, ListPageSource
 from discord.utils import get
@@ -43,7 +43,7 @@ class Reactions(Cog):
 	async def on_message(self, message):
 		#used to check a user's message for emojis, I should make it only fire if there's an emoji in it
 		#ignore bots
-		if (not message.author.bot) and (has_emojis(message)):
+		if (not message.author.bot) and (has_emojis(message)) and message.guild != None:
 			#create a userdb
 			userdb = Dizzidb(message.author, message.guild)
 
@@ -78,7 +78,7 @@ class Reactions(Cog):
 	async def on_reaction_add(self, reaction, user):
 		#monitor reactions for the emojidb
 		#ignore bots
-		if (not user.bot) and (not reaction.message.author.bot):
+		if (not user.bot) and (not reaction.message.author.bot) and message.guild != None:
 			#create userdb object
 			userdb = Dizzidb(user, user.guild)
 			#if a reaction can be formatted as the try, it's custom. Otherwise, it's a default emoji.

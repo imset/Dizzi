@@ -2,11 +2,11 @@ from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from glob import glob
 
-from discord import Intents, Embed, File, Game, Activity, ActivityType
+from discord import Intents, Embed, File, Game, Activity, ActivityType, app_commands
 from discord.ext.commands import (
     Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
     CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
-    command, has_permissions
+    command, has_permissions, NoPrivateMessage
 )
 from discord.errors import (
     HTTPException, Forbidden
@@ -38,7 +38,15 @@ IGNORE_EXCEPTIONS = (CommandNotFound, BadArgument, DisabledCommand)
 
 #gets the set prefix for the bot, see settings cog
 def get_prefix(bot, message):
-    prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
+    # if db.dbexist("guildsettings", "GuildID", message.guild.id):
+    #     prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
+    # else:
+    #     db.execute("INSERT or IGNORE INTO guildsettings (GuildID) VALUES (?)", message.guild.id)
+    #     prefix = "!"
+    if message.guild is not None:
+        prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
+    else:
+        prefix = "!"
     return when_mentioned_or(prefix)(bot, message)
 
 class Ready(object):
@@ -66,7 +74,7 @@ class Bot(BotBase):
             command_prefix=get_prefix,
             owner_ids=OWNER_IDS,
             intents=Intents.all(),
-            activity=Game(name=";help")
+            activity=Game(name="!help")
         )
     
     def setup(self):
@@ -91,11 +99,11 @@ class Bot(BotBase):
         ctx = await self.get_context(message, cls=Context)
         
         #apparently to avoid sending commands over dm
-        if ctx.command is not None and ctx.guild is not None:
-            if self.ready:
-                await self.invoke(ctx)
-            else:
-                await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
+        #if ctx.command is not None and ctx.guild is not None:
+        if self.ready:
+            await self.invoke(ctx)
+        else:
+            await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
         
         
         
@@ -134,6 +142,10 @@ class Bot(BotBase):
             elif (retry/360) < 24:
                 print("hours")
                 await ctx.send(f"Cool it! Try again in {(retry/360):,.2f} hours.")
+
+        elif isinstance(exc, NoPrivateMessage):
+            await ctx.send("Sorry, you can't use this command in a Private Message!")
+
             
         elif isinstance(exc, CheckFailure):
             await ctx.send("Hey! You don't have permission to do that!")
@@ -159,6 +171,8 @@ class Bot(BotBase):
             
         else:
             print("Dizzi reconnected")
+
+        await bot.tree.sync()
         
     async def on_message(self, message):
         if not message.author.bot:
@@ -167,11 +181,9 @@ class Bot(BotBase):
 
     #events for when the bot joins a guild
     #currently this is not needed since the reaction database adds and updates automatically.
-    '''
     async def on_guild_join(self, guild):
         print(f"Joined guild {guild.name} ({guild.id}). Adding members to database...")
         dbsetup(guild)
-    '''
 
 
 bot = Bot()

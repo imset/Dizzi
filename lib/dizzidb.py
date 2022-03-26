@@ -48,7 +48,10 @@ def dbsetup(guild):
 			db.execute("INSERT or IGNORE INTO emojicount (dbid) VALUES (?)", userdb.dbid)
 
 def dbprefix(guild) -> str:
-	prefix = db.field(f"SELECT prefix FROM guildsettings WHERE GuildID = ?", guild.id)
+	if guild == None:
+		prefix = "!"
+	else:
+		prefix = db.field(f"SELECT prefix FROM guildsettings WHERE GuildID = ?", guild.id)
 	return prefix
 
 def dbemojiupdate(msg):

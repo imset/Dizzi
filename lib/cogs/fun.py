@@ -8,10 +8,10 @@ from mediawiki import (
 )
 
 from discord import (
-    Member, Embed
+    Member, Embed, app_commands, Interaction
 )
 from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument
+    Cog, command, cooldown, BucketType, BadArgument, guild_only
 )
 
 from discord.ext import tasks
@@ -27,10 +27,12 @@ from ..dizzidb import Dizzidb, dbprefix
 
 DIZZICOLOR = 0x2c7c94
 
+
 class Fun(Cog):
     """Test description for fun cog"""
     def __init__(self, bot):
         self.bot = bot
+        # tree = bot.tree
         
     @command(name="roll",
         aliases=["r"],
@@ -139,6 +141,16 @@ class Fun(Cog):
             reason = "for no reason"
         await ctx.send(f"{ctx.author.display_name} slapped {member.mention} {reason}.")
         
+
+    @command(name="art",
+            aliases=["avatar"],
+            brief="Credits for my wonderful avatar",
+            usage="`*PREF*art` - Credit where credit is due\nExample: `*PREF*art`")
+    async def art_source(self, ctx):
+        embed = Embed(title=f"Dizzi Art Source", description="Avatar is by @holdenkip.art on Instagram", color=DIZZICOLOR)
+        embed.set_image(url=ctx.guild.me.avatar)
+        await ctx.send(embed=embed)
+
     @slap_member.error
     async def slap_member_error(self, ctx, exc):
         if isinstance(exc, BadArgument):
@@ -153,6 +165,12 @@ class Fun(Cog):
         
         await ctx.message.delete()
         await ctx.send(message)
+
+    # @tree.command()
+    # async def echo_slash(self, interaction: Interaction, message: str):
+    #     #await ctx.message.delete()
+    #     await interaction.response.send_message(message)
+
     
     @command(name="animalfact",
             aliases=["af"],
@@ -258,6 +276,7 @@ class Fun(Cog):
             aliases=["tab","tabs"],
             brief="Keep tabs on someone and be alerted the next time they post something",
             usage="`*PREF*alert <user>` - Will alert you the next time a user posts something.\nExample: `*PREF*alert @hapaboba`")
+    @guild_only()
     async def alert(self, ctx, member: Member):
         """Dizzi will ping you the next time a specific user sends a message."""
         if member.bot == True and member.name == "Dizzi":

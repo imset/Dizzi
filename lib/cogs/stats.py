@@ -11,7 +11,7 @@ from discord.errors import (
 from discord.ext.commands import (
 	Cog, command, CommandNotFound, BadArgument, 
 	MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure,
-	Context
+	Context, guild_only
 )	
 from discord.ext.menus import (
 	MenuPages, ListPageSource
@@ -83,7 +83,8 @@ class ServerEmojiMenu(ListPageSource):
 
 		#create embed
 		embed = Embed(title=f"{guild.name}'s Top Emojis", description="...", color=DIZZICOLOR)        
-		embed.set_thumbnail(url=guild.icon_url)
+		if guild.icon != None:
+			embed.set_thumbnail(url=guild.icon)
 		embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} Emojis.")
 
 		#i is used for the ranking value of emojis
@@ -122,6 +123,7 @@ class Stats(Cog):
 			aliases=["emotehistory", "eh"],
 			brief="See a user's favorite emojis",
 			usage="`*PREF*emojihistory <member>` - Get a list of `<member>`'s favorite emojis on the current server. If `<member>` is not given, it defaults to your own list.\nExample: `*PREF*emojihistory @jeff`")
+	@guild_only()
 	async def emoji_history(self, ctx, member: Optional[Member]):
 		"""Find out what your friend's favorite emojis are. Data is based off both message emojis and reaction emojis.
 		Record keeping began on 11/1/2021"""
@@ -159,6 +161,7 @@ class Stats(Cog):
 			aliases=["serveremotehistory", "seh"],
 			brief="See the server's favorite emojis",
 			usage="`*PREF*serveremojihistory` - Get a list of the server's favorite emojis. \nExample: `*PREF*seh`")
+	@guild_only()
 	async def server_emoji_history(self, ctx):
 
 		fullemoji = []

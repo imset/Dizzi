@@ -7,7 +7,7 @@ import time
 
 from discord.ext.commands import Cog
 from discord.ext.commands import CheckFailure
-from discord.ext.commands import command, has_permissions, is_owner
+from discord.ext.commands import command, has_permissions, is_owner, guild_only
 from discord import TextChannel
 
 from ..db import db
@@ -35,6 +35,7 @@ class Settings(Cog):
 			brief="Set a channel for Dizzi to greet people in.",
 			usage="`*PREF*welcomechannel <channel>` - Sets the channel where Dizzi will welcome people. `<channel>` is a mentioned channel\nExample: `*PREF*welcomechannel #general`.")
 	@has_permissions(manage_guild=True)
+	@guild_only()
 	async def change_welcomechannel(self, ctx, channel: TextChannel):
 		"""Change the default welcome channel for Dizzi to greet people in. The channel must be properly mentioned with the # symbol."""
 		db.execute("UPDATE guildsettings SET Welcome = ? WHERE GuildID = ?", str(channel.id), ctx.guild.id)
@@ -45,6 +46,7 @@ class Settings(Cog):
 			brief="Change the default prefix to use Dizzi commands",
 			usage="`*PREF*prefix <new>` - changes the server prefix for Dizzi into the value for `<new>`.\nExample: `*PREF*prefix +`")
 	@has_permissions(manage_guild=True)
+	@guild_only()
 	async def change_prefix(self, ctx, new: str):
 		"""Change the default prefix that Dizzi will pay attention to. Be careful not to choose one already taken by another bot!"""
 		if len(new) > 5:
@@ -56,6 +58,7 @@ class Settings(Cog):
 	@command(name="dbsetup",
 			hidden=True)
 	@is_owner()
+	@guild_only()
 	async def dbsetup(self, ctx):
 		#this command will invoke a class to add all members of a server to a database
 		message = await ctx.send(f"Setting up databases for {ctx.guild.name}...")
@@ -70,6 +73,7 @@ class Settings(Cog):
 			aliases=["esh"],
 			hidden=True)
 	@is_owner()
+	@guild_only()
 	async def emoteservhist(self, ctx, chnl: Optional[TextChannel]):
 		#using this command will cause the bot to read through the entire server history and populate the emote history database
 		#channels included with the command will be ignored
@@ -145,6 +149,7 @@ class Settings(Cog):
 			aliases=["ech"],
 			hidden=True)
 	@is_owner()
+	@guild_only()
 	async def emotechanhist(self, ctx, channel: TextChannel):
 		#using this command will cause the bot to read through the channel history and populate the emote history database
 		progress = await ctx.send("Starting...")

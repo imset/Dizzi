@@ -3,7 +3,7 @@ from typing import Optional
 from discord import Embed
 from discord.utils import get
 from discord.ext.commands import (
-	Cog, command
+	Cog, command, guild_only
 )
 from discord.ext.menus import (
 	MenuPages, ListPageSource
@@ -32,7 +32,7 @@ class HelpMenu(ListPageSource):
 	def __init__(self, ctx, data):
 		self.ctx = ctx
 		
-		super().__init__(data, per_page=5)
+		super().__init__(data, per_page=8)
 		
 	async def write_page(self, menu, fields=[]):
 		offset = (menu.current_page*self.per_page) + 1
@@ -40,7 +40,8 @@ class HelpMenu(ListPageSource):
 		
 		embed = Embed(title="Dizzi's Command Help", description=f"What can I help you with? \n(use {dbprefix(self.ctx.guild)}help <command> for more info about a specific command)",color=DIZZICOLOR)
 		
-		embed.set_thumbnail(url=self.ctx.guild.me.avatar_url)
+		#embed.set_thumbnail(url=self.ctx.guild.me.avatar)
+		embed.set_thumbnail(url=self.ctx.me.avatar)
 		embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} commands.")
 		cogname = ""
 		for brief, value, cog, hidden, name, enabled in fields:
@@ -49,7 +50,7 @@ class HelpMenu(ListPageSource):
 			if hidden != True and enabled != False:
 				if cog != cogname:
 					cogname = cog
-					embed.add_field(name="**————————————————**", value = f"**{str(cogname).title()} Group:\n————————————————**", inline=False)
+					embed.add_field(name="**————————————————**", value = f"**{str(cogname).title()} Commands:\n————————————————**", inline=False)
 				embed.add_field(name=brief, value=value, inline=False)
 			else:
 				continue
@@ -84,7 +85,7 @@ class Helper(Cog):
 		await ctx.send(embed=embed)
 	
 	@command(name="help",
-			brief="Get help with a specific commanad",
+			brief="Get help with a specific command",
 			usage="`*PREF*help` - gives you a list of all commands\n`{dbprefix(ctx.guild)}help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)",
 			hidden=True)
 	async def show_help(self, ctx, cmd: Optional[str]):
