@@ -40,5 +40,5 @@ class Welcome(Cog):
 		db.execute("DELETE FROM exp WHERE UserID = ?", member.id)
 
 
-def setup(bot):
-	bot.add_cog(Welcome(bot))
+async def setup(bot):
+	await bot.add_cog(Welcome(bot))

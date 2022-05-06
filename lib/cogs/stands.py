@@ -36,6 +36,9 @@ DIZZICOLOR = 0x2c7c94
 with open("./lib/bot/lastfm.0", "r", encoding="utf=8") as tf:
     LASTTOKEN = tf.read()
 
+def standgenerator(userdb):
+    return
+
 #used to convert stand stats from numbers to letters. stats are numbers in the backend for convenience in changing them.
 def standstathandler(stat_value):
     letterstats = []
@@ -162,6 +165,8 @@ class Stands(Cog):
                     db.execute("UPDATE stand SET tags = ? WHERE UserID = ?", chosen_row['tags'], userdb.uid)
                     db.execute("UPDATE stand SET total_comparisons = ? WHERE UserID = ?", chosen_row['total_comparisons'], userdb.uid)
                     db.execute("UPDATE stand SET preference_ratio = ? WHERE UserID = ?", chosen_row['preference_ratio'], userdb.uid)
+                    db.execute("UPDATE stand SET origin = ? WHERE UserID = ?", chosen_row['origin'], userdb.uid)
+
 
                     r = chosen_row['description'].split(" ")
                     wordlist = []
@@ -302,6 +307,7 @@ class Stands(Cog):
                 stats = standstathandler(db.field(f"SELECT stats FROM stand WHERE UserID = ?", userdb.uid).split(", "))
                 br = db.field(f"SELECT battlerecord FROM stand WHERE UserID = ?", userdb.uid).split(", ")
                 traits = db.field(f"SELECT traits FROM stand WHERE UserID = ?", userdb.uid).split(", ")
+                origin = int(db.field(f"SELECT origin FROM stand WHERE UserID = ?", userdb.uid))
 
                 if act == 1:
                     embed = Embed(title=f"**Stand Name**: 「{standname}」",color=DIZZICOLOR)
@@ -327,7 +333,8 @@ class Stands(Cog):
                 embed.add_field(name="Items:", value=f"Arrowheads: {arrows}\nCharms: {charms}")
                 embed.add_field(name="Energy:", value=f"{energy}")
                 embed.add_field(name="Battle Record:", value=f"Wins: {br[0]} | Losses: {br[1]}")
-                embed.set_footer(text="\nCopyright © Justin Mahar | The Superpower List")
+                if origin == 0:
+                    embed.set_footer(text="\nCopyright © Justin Mahar | The Superpower List")
                 embed.set_author(name=f"{ctx.author.display_name}", icon_url=f"{ctx.author.avatar}")
 
                 await ctx.send(embed=embed)
@@ -432,7 +439,9 @@ class Stands(Cog):
             if dailystatus == 1:
                 await ctx.send("Sorry, I've already given you your daily arrows. Try again later!")
             else:
-                dailyarrows = randint(1, 3)
+                #dailyarrows = randint(1, 3)
+                #guarantee 3 daily arrows during rewrite period
+                dailyarrows = 3
                 await ctx.send(f"You open your daily box. Inside are {dailyarrows} arrowheads!")
                 arrows = arrows + dailyarrows
                 db.execute("UPDATE arrows SET arrowheads = ? WHERE UserID = ?", arrows, userdb.uid)
@@ -565,5 +574,5 @@ class Stands(Cog):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("stands")
 
-def setup(bot):
-        bot.add_cog(Stands(bot))
+async def setup(bot):
+        await bot.add_cog(Stands(bot))

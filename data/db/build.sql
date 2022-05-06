@@ -55,11 +55,18 @@ CREATE TABLE IF NOT EXISTS stand (
 	preference_ratio text DEFAULT "0.0",
 	stats text DEFAULT "C, C, C, C, C, C",
 	battlerecord text DEFAULT "0, 0",
-	traits text DEFAULT " "
+	traits text DEFAULT " ",
+	origin integer DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS arrows (
 	UserID text PRIMARY KEY,
 	arrowheads integer DEFAULT 4,
 	shopclaim integer DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS deflect (
+	dbid text PRIMARY KEY,
+	t_val text DEFAULT "NONE",
+	uses integer DEFAULT 0
 );

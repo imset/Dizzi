@@ -299,7 +299,7 @@ class Fun(Cog):
     @command(name="deflect",
             brief="Deflect a beam",
             usage="`*PREF*deflect` - It'll take more than that!\nExample: `*PREF*deflect`")
-    async def alert(self, ctx):
+    async def deflect(self, ctx):
         """Deflect a beam of energy so that it'll harmlessly hit a mountain in the background instead."""
         await ctx.send("https://i.imgur.com/MYI8EJh.gif")
 
@@ -418,25 +418,25 @@ class Fun(Cog):
     #     db.execute("UPDATE birthday SET year = ? WHERE dbid = ?", yearval, memberdb.dbid)
     #     await ctx.send(f"Alright, I've added {finalmonthday}/{yearval} as {member.name}'s birthday. I'll be sure to wish them a happy birthday!")
 
-    # @Cog.listener()
-    # async def on_message(self, message):
-    #     #used to check if a user is needed in the alert system
-    #     #ignore bots
-    #     if (not message.author.bot):
-    #         #create a userdb
-    #         userdb = Dizzidb(message.author, message.guild)
+    @Cog.listener()
+    async def on_message(self, message):
+        #used to check if a user is needed in the alert system
+        #ignore bots
+        if (not message.author.bot) and (message.guild is not None):
+            #create a userdb
+            userdb = Dizzidb(message.author, message.guild)
 
-    #         if db.dbexist("alert", "dbid", userdb.dbid):
-    #             ctx = await self.bot.get_context(message)
-    #             alertset = userdb.dbluset("alert", "alertset", userdb.dbid)
-    #             #now have the alertset, which should be set in the ;tabs command
-    #             for u in alertset:
-    #                 ping = await self.bot.fetch_user(u)
-    #                 await ctx.send(f"{message.author.name} is online, {ping.mention}!")
-    #             alertset = []
-    #             db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
-    #         else:
-    #             return
+            if db.dbexist("alert", "dbid", userdb.dbid):
+                ctx = await self.bot.get_context(message)
+                alertset = userdb.dbluset("alert", "alertset", userdb.dbid)
+                #now have the alertset, which should be set in the ;tabs command
+                for u in alertset:
+                    ping = await self.bot.fetch_user(u)
+                    await ctx.send(f"{message.author.name} is online, {ping.mention}!")
+                alertset = []
+                db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
+            else:
+                return
 
     # #birthday task loop
     # @tasks.loop(minutes = 60.0)
@@ -472,5 +472,5 @@ class Fun(Cog):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("fun")
             
-def setup(bot):
-    bot.add_cog(Fun(bot))
+async def setup(bot):
+    await bot.add_cog(Fun(bot))

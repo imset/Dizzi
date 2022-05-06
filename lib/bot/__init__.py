@@ -1,52 +1,51 @@
-from asyncio import sleep
+#from asyncio import sleep
+import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from glob import glob
 
-from discord import Intents, Embed, File, Game, Activity, ActivityType, app_commands
+from discord import Intents, Embed, File, Game, Activity, ActivityType, app_commands, Object
 from discord.ext.commands import (
     Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
     CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
-    command, has_permissions, NoPrivateMessage
+    command, has_permissions, NoPrivateMessage, is_owner, guild_only
 )
 from discord.errors import (
     HTTPException, Forbidden
 )
-#from discord.ext.commands import CommandNotFound, BadArgument, MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure
-#from discord.ext.commands import Context
-#from discord.ext.commands import when_mentioned_or, command, has_permissions
-
-#IF SOMETHING'S BROKEN IT'S PROBABLY HERE from discord.ext import commands
-#import discord
-#from discord import Embed, File
 
 import logging
 from ..db import db
 from ..dizzidb import dbsetup
 
 #the following is cut and paste from the library tutorial for logging, outputs dizzilog.log
-
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='dizzilog.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-OWNER_IDS = [134760463811477504]
+#Dizzi's owner ID. There's a few theoretical ways to expand this to a larger list - for example, you could
+#separate individual IDs in owner.0 and perform .split() on tf then pass that to OWNER_IDS.
+with open("./lib/bot/owner.0", "r", encoding="utf=8") as tf:
+    #rewrite - one owner, there's a weird bug
+    #OWNER_IDS = [tf.read()]
+    OWNER_ID = int(tf.read())
+
+#old: hardcoded my owner ID
+#OWNER_IDS = [134760463811477504]
 COGS = [path.split("\\")[-1][:-3] for path in glob("./lib/cogs/*.py")]
 #exceptions that will be ignored
 IGNORE_EXCEPTIONS = (CommandNotFound, BadArgument, DisabledCommand)
 
 #gets the set prefix for the bot, see settings cog
 def get_prefix(bot, message):
-    # if db.dbexist("guildsettings", "GuildID", message.guild.id):
-    #     prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
-    # else:
-    #     db.execute("INSERT or IGNORE INTO guildsettings (GuildID) VALUES (?)", message.guild.id)
-    #     prefix = "!"
+    #if not in DMs
     if message.guild is not None:
         prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", message.guild.id)
     else:
+        #ensure default prefix is !
         prefix = "!"
+    #bot will respond
     return when_mentioned_or(prefix)(bot, message)
 
 class Ready(object):
@@ -72,14 +71,16 @@ class Bot(BotBase):
         
         super().__init__(
             command_prefix=get_prefix,
-            owner_ids=OWNER_IDS,
+            owner_id=OWNER_ID,
+            #see above notes about bug with owner_ids
+            #owner_ids=OWNER_IDS,
             intents=Intents.all(),
             activity=Game(name="!help")
         )
-    
+
     def setup(self):
         for cog in COGS:
-            self.load_extension(f"lib.cogs.{cog}")
+            asyncio.run(self.load_extension(f"lib.cogs.{cog}"))
             print(f" {cog} cog loaded")
         print(" cog setup complete")
         
@@ -95,15 +96,17 @@ class Bot(BotBase):
         print("Running Dizzi...")
         super().run(self.TOKEN, reconnect=True)
         
+
     async def process_commands(self, message):
         ctx = await self.get_context(message, cls=Context)
         
         #apparently to avoid sending commands over dm
-        #if ctx.command is not None and ctx.guild is not None:
-        if self.ready:
-            await self.invoke(ctx)
-        else:
-            await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
+        if ctx.command is not None:
+            if self.ready:
+                await self.invoke(ctx)
+            else:
+                await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
+                pass
         
         
         
@@ -164,16 +167,16 @@ class Bot(BotBase):
             self.scheduler.start()
 
             while not self.cogs_ready.all_ready():
-                await sleep(3)
+                await asyncio.sleep(3)
                 
             self.ready = True
             print("Dizzi is ready")
             
         else:
             print("Dizzi reconnected")
-
-        await bot.tree.sync()
         
+        #await self.tree.sync(guild=Object(id=762125363937411132))
+
     async def on_message(self, message):
         if not message.author.bot:
             await self.process_commands(message)
@@ -184,6 +187,5 @@ class Bot(BotBase):
     async def on_guild_join(self, guild):
         print(f"Joined guild {guild.name} ({guild.id}). Adding members to database...")
         dbsetup(guild)
-
 
 bot = Bot()

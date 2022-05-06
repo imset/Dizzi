@@ -53,6 +53,7 @@ class Reactions(Cog):
 			#it may be possible to optimize that regex so the below if/for loop, and the entire emoji library, isn't necessary
 
 			#used to find default emojis in the message and add them to the emojiset
+			#April update to add pin react support
 			if emojis.count(message.content) > 0:
 				for e in emojis.get(message.content):
 					emojiset.append(e)
@@ -78,7 +79,7 @@ class Reactions(Cog):
 	async def on_reaction_add(self, reaction, user):
 		#monitor reactions for the emojidb
 		#ignore bots
-		if (not user.bot) and (not reaction.message.author.bot) and message.guild != None:
+		if (not user.bot) and (not reaction.message.author.bot) and reaction.message.guild != None:
 			#create userdb object
 			userdb = Dizzidb(user, user.guild)
 			#if a reaction can be formatted as the try, it's custom. Otherwise, it's a default emoji.
@@ -95,6 +96,10 @@ class Reactions(Cog):
 			#get user's emoji dictionary
 			uemojidict = userdb.dbludict("emojicount", "emojidict", userdb.dbid)
 			
+			#April update to add pin support
+			if reactiondata == "📌" or reactiondata == "📍":
+				print(reaction.message.content)
+
 			#add the emoji to the dict if its not in, and if it is iterate it by 1
 			if reactiondata not in uemojidict:
 				uemojidict[reactiondata] = 1
@@ -117,5 +122,5 @@ class Reactions(Cog):
 		pass
 	'''
 
-def setup(bot):
-	bot.add_cog(Reactions(bot))
+async def setup(bot):
+	await bot.add_cog(Reactions(bot))

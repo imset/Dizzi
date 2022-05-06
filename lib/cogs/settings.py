@@ -8,7 +8,7 @@ import time
 from discord.ext.commands import Cog
 from discord.ext.commands import CheckFailure
 from discord.ext.commands import command, has_permissions, is_owner, guild_only
-from discord import TextChannel
+from discord import TextChannel, utils, Permissions, app_commands, HTTPException, Object
 
 from ..db import db
 from ..dizzidb import Dizzidb, dbsetup, dbreactupdate, dbemojiupdate
@@ -257,10 +257,29 @@ class Settings(Cog):
 	# @is_owner()
 	# async def testhist1(self, ctx, channel: TextChannel):
 
+	# @command(name="dizziurl",
+	# 		aliases=["du"])
+	# async def dizziurl(self, ctx):
+	# 	# myurl = utils.oauth_url(588587478970269717,permissions=[create_instant_invite, kick_members, ban_members, manage_channels, manage_guild, add_reactions, 
+	# 	# 				view_audit_log, priority_speaker, stream, read_messages, view_channel, send_messages, manage_messages, embed_links, attach_files,
+	# 	# 				read_message_history, mention_everyone, external_emojis, view_guild_insights, connect, speak, mute_members, deafen_members, move_members,
+	# 	# 				use_voice_activation, change_nickname, manage_nicknames, manage_roles, manage_permissions, manage_webhooks, use_application_commands, request_to_speak])
+	# 	myurl = utils.oauth_url(588587478970269717, permissions=Permissions.all)
+	# 	await ctx.send(myurl)
+
+	# @command(name="amiowner")
+	# async def owncheck(self, ctx):
+	# 	if int(self.bot.owner_ids[0]) == int(ctx.author.id):
+	# 		await ctx.send("True!")
+	# 	else:
+	# 		await ctx.send("False!")
+	# 	print(self.bot.owner_ids[0])
+	# 	print(ctx.author.id)
+		
 	@Cog.listener()
 	async def on_ready(self):
 		if not self.bot.ready:
 			self.bot.cogs_ready.ready_up("settings")
 	
-def setup(bot):
-	bot.add_cog(Settings(bot))
+async def setup(bot):
+	await bot.add_cog(Settings(bot))

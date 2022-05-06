@@ -168,10 +168,15 @@ class Birthday(Cog):
             #to count digits - years should be 4 digits, day should be 1 or 2.
 
             #first remove all non-digits from each entry in daylist.
-            i0 = re.sub('\D', '', daylist[0])
-            i1 = re.sub('\D', '', daylist[1])
-            i2 = re.sub('\D', '', daylist[2])
-            daylisttemp = [i0, i1, i2]
+            # i0 = re.sub('\D', '', daylist[0])
+            # i1 = re.sub('\D', '', daylist[1])
+            # i2 = re.sub('\D', '', daylist[2])
+
+            i = 0
+            daylisttemp = []
+            while i < len(daylist):
+                daylisttemp.append(re.sub('\D', '', daylist[i]))
+                i += 1
 
             #now we need to iterate over each one and find the 4 digit year
             for i in daylisttemp:
@@ -261,25 +266,25 @@ class Birthday(Cog):
         await menu.start(ctx)
 
 
-    @Cog.listener()
-    async def on_message(self, message):
-        #used to check if a user is needed in the alert system
-        #ignore bots
-        if (not message.author.bot) and message.guild != None:
-            #create a userdb
-            userdb = Dizzidb(message.author, message.guild)
+    # @Cog.listener()
+    # async def on_message(self, message):
+    #     #used to check if a user is needed in the alert system
+    #     #ignore bots
+    #     if (not message.author.bot) and message.guild != None:
+    #         #create a userdb
+    #         userdb = Dizzidb(message.author, message.guild)
 
-            if db.dbexist("alert", "dbid", userdb.dbid):
-                ctx = await self.bot.get_context(message)
-                alertset = userdb.dbluset("alert", "alertset", userdb.dbid)
-                #now have the alertset, which should be set in the ;tabs command
-                for u in alertset:
-                    ping = await self.bot.fetch_user(u)
-                    await ctx.send(f"{message.author.name} is online, {ping.mention}!")
-                alertset = []
-                db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
-            else:
-                return
+    #         if db.dbexist("alert", "dbid", userdb.dbid):
+    #             ctx = await self.bot.get_context(message)
+    #             alertset = userdb.dbluset("alert", "alertset", userdb.dbid)
+    #             #now have the alertset, which should be set in the ;tabs command
+    #             for u in alertset:
+    #                 ping = await self.bot.fetch_user(u)
+    #                 await ctx.send(f"{message.author.name} is online, {ping.mention}!")
+    #             alertset = []
+    #             db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
+    #         else:
+    #             return
 
     #birthday task loop
     @tasks.loop(minutes = 60.0)
@@ -328,5 +333,5 @@ class Birthday(Cog):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("birthday")
             
-def setup(bot):
-    bot.add_cog(Birthday(bot))
+async def setup(bot):
+    await bot.add_cog(Birthday(bot))

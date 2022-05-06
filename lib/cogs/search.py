@@ -208,5 +208,5 @@ class Search(Cog):
 		#await ctx.send("https://www.youtube.com/watch?v=G2od3Z6dqO0")
 
 
-def setup(bot):
-	bot.add_cog(Search(bot))
+async def setup(bot):
+	await bot.add_cog(Search(bot))

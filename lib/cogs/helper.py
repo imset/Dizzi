@@ -90,7 +90,10 @@ class Helper(Cog):
 			hidden=True)
 	async def show_help(self, ctx, cmd: Optional[str]):
 		"""What kind of person looks up help for the help command?"""
-		
+		if ctx.message.guild == None:
+			await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
+			return
+			
 		#remove hidden commands
 		commandlist = []
 		for command in self.bot.commands:
@@ -135,5 +138,5 @@ class Helper(Cog):
 		if not self.bot.ready:
 			self.bot.cogs_ready.ready_up("helper")
 			
-def setup(bot):
-	bot.add_cog(Helper(bot))
+async def setup(bot):
+	await bot.add_cog(Helper(bot))
