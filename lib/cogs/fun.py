@@ -166,11 +166,6 @@ class Fun(Cog):
         await ctx.message.delete()
         await ctx.send(message)
 
-    # @tree.command()
-    # async def echo_slash(self, interaction: Interaction, message: str):
-    #     #await ctx.message.delete()
-    #     await interaction.response.send_message(message)
-
     
     @command(name="animalfact",
             aliases=["af"],

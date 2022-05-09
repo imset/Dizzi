@@ -9,7 +9,7 @@ from discord.ext.menus import (
 	MenuPages, ListPageSource
 )
 from discord.ext import menus
-from discord.ext.menus.views import ViewMenu
+from discord.ext.menus.views import ViewMenuPages
 
 from ..db import db
 from ..dizzidb import dbprefix
@@ -73,10 +73,10 @@ class HelpMenu(ListPageSource):
 		return await self.write_page(menu, fields)
 			
 
-class Helper(Cog):
+class NewHelper(Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.bot.remove_command("help")
+		#self.bot.remove_command("help")
 		
 	async def cmd_help(self, ctx, command):
 		embed = Embed(title=f"Help for: `{str(command).title()}`", description=syntax(command, ctx.guild), color=DIZZICOLOR)
@@ -86,11 +86,11 @@ class Helper(Cog):
 		embed.add_field(name="**————————————————\nCommand Usage\n————————————————**", value=f"{tmpusage}", inline=False)
 		await ctx.send(embed=embed)
 	
-	@command(name="help",
+	@command(name="newhelp",
 			brief="Get help with a specific command",
 			usage="`*PREF*help` - gives you a list of all commands\n`{dbprefix(ctx.guild)}help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)",
 			hidden=True)
-	async def show_help(self, ctx, cmd: Optional[str]):
+	async def show_newhelp(self, ctx, cmd: Optional[str]):
 		"""What kind of person looks up help for the help command?"""
 		if ctx.message.guild == None:
 			await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
@@ -106,7 +106,7 @@ class Helper(Cog):
 		commandlist = sorted(commandlist, key=lambda x: (x.cog_name, x.name))
 		
 		if cmd is None:
-			menu = MenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
+			menu = ViewMenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
 			await menu.start(ctx)
 			
 		else:
@@ -127,18 +127,18 @@ class Helper(Cog):
 				if not len(coglist):    
 					await ctx.send("That command or command group does not exist.")
 				else:
-					menu = MenuPages(source=HelpMenu(ctx, coglist))
+					menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
 					await menu.start(ctx)
 	
-	@show_help.error
-	async def show_help_error(self, ctx, exc):
+	@show_newhelp.error
+	async def show_newhelp_error(self, ctx, exc):
 		if isinstance(exc, AttributeError):
 			await ctx.send("I'm not sure what that command is. Sorry!")
 	
 	@Cog.listener()
 	async def on_ready(self):
 		if not self.bot.ready:
-			self.bot.cogs_ready.ready_up("helper")
+			self.bot.cogs_ready.ready_up("newhelper")
 			
 async def setup(bot):
-	await bot.add_cog(Helper(bot))
+	await bot.add_cog(NewHelper(bot))

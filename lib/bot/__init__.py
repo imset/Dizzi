@@ -3,7 +3,9 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from glob import glob
 
-from discord import Intents, Embed, File, Game, Activity, ActivityType, app_commands, Object
+from discord import Intents, Embed, File, Game, Activity, ActivityType, app_commands, Interaction
+from discord import Object as DiscordObject
+from discord import Message as DiscordMessage
 from discord.ext.commands import (
     Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
     CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
@@ -82,6 +84,7 @@ class Bot(BotBase):
         for cog in COGS:
             asyncio.run(self.load_extension(f"lib.cogs.{cog}"))
             print(f" {cog} cog loaded")
+
         print(" cog setup complete")
         
     def run(self, version):

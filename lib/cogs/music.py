@@ -102,4 +102,3 @@ class Music(Cog):
             
 async def setup(bot):
     await bot.add_cog(Music(bot))
-    #bot.tree.add_command(MusicSlash())
