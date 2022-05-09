@@ -3,13 +3,12 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from glob import glob
 
-from discord import Intents, Embed, File, Game, Activity, ActivityType, app_commands, Interaction
-from discord import Object as DiscordObject
-from discord import Message as DiscordMessage
+import discord
+
 from discord.ext.commands import (
     Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
     CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
-    command, has_permissions, NoPrivateMessage, is_owner, guild_only
+    command, NoPrivateMessage
 )
 from discord.errors import (
     HTTPException, Forbidden
@@ -76,8 +75,8 @@ class Bot(BotBase):
             owner_id=OWNER_ID,
             #see above notes about bug with owner_ids
             #owner_ids=OWNER_IDS,
-            intents=Intents.all(),
-            activity=Game(name="!help")
+            intents=discord.Intents.all(),
+            activity=discord.Game(name="!help")
         )
 
     def setup(self):
