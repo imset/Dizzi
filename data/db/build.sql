@@ -4,22 +4,6 @@ CREATE TABLE IF NOT EXISTS guildsettings (
 	Welcome text DEFAULT ""
 );
 
-CREATE TABLE IF NOT EXISTS exp (
-	UserID integer PRIMARY KEY,
-	XP integer DEFAULT 0,
-	Level integer DEFAULT 0,
-	XPLock text DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS avatarhistory (
-	UserID integer PRIMARY KEY,
-	Current text DEFAULT "",
-	Store0 text DEFAULT "",
-	Store1 text DEFAULT "",
-	Store2 text DEFAULT "",
-	Store3 text DEFAULT "",
-	Store4 text DEFAULT ""
-);
 
 CREATE TABLE IF NOT EXISTS emojicount (
 	dbid text PRIMARY KEY,
@@ -63,10 +47,4 @@ CREATE TABLE IF NOT EXISTS arrows (
 	UserID text PRIMARY KEY,
 	arrowheads integer DEFAULT 4,
 	shopclaim integer DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS deflect (
-	dbid text PRIMARY KEY,
-	t_val text DEFAULT "NONE",
-	uses integer DEFAULT 0
 );
