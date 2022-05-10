@@ -1,34 +1,19 @@
-from aiohttp import request, ClientSession
+import re
+import io
 import asyncio
-from random import (
-    choice, randint
-)
-from mediawiki import (
-    MediaWiki, exceptions
-)
-
+import discord
+from aiohttp import request, ClientSession
 from discord import (
-    Member, Embed, File
+    Member, Embed
 )
-
 from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument, MemberNotFound, guild_only
+    Cog, command, BadArgument, MemberNotFound, guild_only
 )
-
 from discord.ext import tasks
-
 from discord.ext.menus import (
     MenuPages, ListPageSource
 )
-
-from discord.errors import HTTPException
-
 from datetime import date, datetime
-
-import re
-
-import io
-
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
 
@@ -317,7 +302,7 @@ class Birthday(Cog):
                         async with ClientSession() as session:
                             async with session.get(jsondata['response']) as resp:
                                 data = io.BytesIO(await resp.read())
-                                await channelpush.send(file=File(data, 'celebrate.gif'))
+                                await channelpush.send(file=discord.File(data, 'celebrate.gif'))
 
                     wished = 1
                     db.execute("UPDATE birthday SET wished = ? WHERE dbid = ?", 1, i)
