@@ -216,17 +216,6 @@ class Birthday(Cog):
         """Show a list of user birthdays on your server."""
 
         bdset = db.records("SELECT dbid, monthday FROM birthday WHERE dbid LIKE ?", f"%.{ctx.guild.id}")
-        #monthdayset = db.column("SELECT monthday FROM birthday WHERE dbid LIKE ?", f"%.{ctx.guild.id}")
-
-
-        # allbdset = []
-        # i = 0
-        # while i < len(dbidset):
-        #     splitset = dbidset[i].split(".")
-        #     u = await self.bot.fetch_user(splitset[0])
-        #     tempset = [u, monthdayset[i]]
-        #     allbdset.append(tempset)
-        #     i += 1
 
         #note for the future - this is slow
 
@@ -250,26 +239,6 @@ class Birthday(Cog):
         menu = MenuPages(source=BdMenu(ctx, bdconvset))
         await menu.start(ctx)
 
-
-    # @Cog.listener()
-    # async def on_message(self, message):
-    #     #used to check if a user is needed in the alert system
-    #     #ignore bots
-    #     if (not message.author.bot) and message.guild != None:
-    #         #create a userdb
-    #         userdb = Dizzidb(message.author, message.guild)
-
-    #         if db.dbexist("alert", "dbid", userdb.dbid):
-    #             ctx = await self.bot.get_context(message)
-    #             alertset = userdb.dbluset("alert", "alertset", userdb.dbid)
-    #             #now have the alertset, which should be set in the ;tabs command
-    #             for u in alertset:
-    #                 ping = await self.bot.fetch_user(u)
-    #                 await ctx.send(f"{message.author.name} is online, {ping.mention}!")
-    #             alertset = []
-    #             db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
-    #         else:
-    #             return
 
     #birthday task loop
     @tasks.loop(minutes = 60.0)
