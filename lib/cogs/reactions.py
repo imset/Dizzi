@@ -1,12 +1,10 @@
+#honestly I don't know why I'm importing ast here but I'm too afraid to remove it right now
 import ast
 import re
 import emojis
 from discord import Embed
-from discord.ext.commands import Cog, command, guild_only
-#from discord.ext.commands import command
-from discord.ext.menus import MenuPages, ListPageSource
+from discord.ext.commands import Cog, command
 from discord.utils import get
-
 from ..db import db
 from ..dizzidb import Dizzidb
 
@@ -41,7 +39,7 @@ class Reactions(Cog):
 
 	@Cog.listener()
 	async def on_message(self, message):
-		#used to check a user's message for emojis, I should make it only fire if there's an emoji in it
+		#used to check a user's message for emojis
 		#ignore bots
 		if (not message.author.bot) and (has_emojis(message)) and message.guild != None:
 			#create a userdb
@@ -53,7 +51,6 @@ class Reactions(Cog):
 			#it may be possible to optimize that regex so the below if/for loop, and the entire emoji library, isn't necessary
 
 			#used to find default emojis in the message and add them to the emojiset
-			#April update to add pin react support
 			if emojis.count(message.content) > 0:
 				for e in emojis.get(message.content):
 					emojiset.append(e)
@@ -95,10 +92,6 @@ class Reactions(Cog):
 
 			#get user's emoji dictionary
 			uemojidict = userdb.dbludict("emojicount", "emojidict", userdb.dbid)
-			
-			#April update to add pin support
-			if reactiondata == "📌" or reactiondata == "📍":
-				print(reaction.message.content)
 
 			#add the emoji to the dict if its not in, and if it is iterate it by 1
 			if reactiondata not in uemojidict:
@@ -106,21 +99,6 @@ class Reactions(Cog):
 			else:
 				uemojidict[reactiondata] += 1
 			db.execute("UPDATE emojicount SET emojidict = ? WHERE dbid = ?", str(uemojidict), userdb.dbid)
-		
-	#the following is here to be uncommented in the future in case I ever decide I need them
-	'''
-	@Cog.listener()
-	async def on_reaction_remove(self, reaction, user):
-		pass	
-
-	@Cog.listener()
-	async def on_raw_reaction_add(self, reaction, user):
-		print(f"[RAW] {payload.member.display_name} reacted with {payload.emoji.name}")
-
-	@Cog.listener()
-	async def on_raw_reaction_remove(self, reaction, user):
-		pass
-	'''
 
 async def setup(bot):
 	await bot.add_cog(Reactions(bot))
