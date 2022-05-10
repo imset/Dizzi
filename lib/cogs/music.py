@@ -1,37 +1,16 @@
-from aiohttp import request
-from typing import Optional, Literal
 import asyncio
-from random import (
-    choice, randint
-)
-from mediawiki import (
-    MediaWiki, exceptions
-)
-
 from discord import (
-    Member, Embed, app_commands, Interaction, FFmpegPCMAudio, utils, app_commands, Object, HTTPException
+    Member, Embed, Interaction, FFmpegPCMAudio, utils
 )
 from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument, guild_only, group, is_owner, guild_only, Context, Greedy
+    Cog, command, cooldown, guild_only
 )
-
-from discord.ext import tasks
-
-from discord.errors import HTTPException, ClientException
-
-from datetime import date, datetime
-import time
-
-import re
-
-from ..db import db
-from ..dizzidb import Dizzidb, dbprefix
+from discord.errors import ClientException
 
 class Music(Cog):
     """Test description for music cog"""
     def __init__(self, bot):
         self.bot = bot
-        # tree = bot.tree
 
     @command(name="musicplay",
         aliases=["muplay","mp"],
@@ -53,13 +32,6 @@ class Music(Cog):
             while vc.is_playing():
                 await asyncio.sleep(1)
             await vc.disconnect()
-            #print(vc.is_playing())
-            # while vc.is_playing():
-            #     print(vc.is_playing())
-            # print(vc.is_playing())
-            # if not vc.is_playing():
-            #     print (vc.is_playing())
-            #     await voice_channel.disconnect()
         else:
             await ctx.send("Join a voice channel to use this command!")
         # Delete command after the audio is done playing.
@@ -81,18 +53,6 @@ class Music(Cog):
                 await vc.disconnect()
             else:
                 await ctx.send("Error: Must be in the same voice channel.")
-
-    # @command(name="testsync",
-    #     hidden=True)
-    # @is_owner()
-    # async def testsync(self, ctx):
-    #     try:
-    #         await ctx.bot.tree.sync(guild=Object(id=ctx.guild.id))
-    #     except HTTPException as e:
-    #         print(e)
-    #         pass
-
-    #     await ctx.send("Done")
 
     @Cog.listener()
     async def on_ready(self):
