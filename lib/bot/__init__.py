@@ -114,7 +114,7 @@ class Bot(BotBase):
             if self.ready:
                 await self.invoke(ctx)
             else:
-                await ctx.send("Please wait a moment before sending a command. I'm still waking up.")
+                await ctx.send("Please wait a moment before sending a command. I'm still waking up.", ephemeral=True)
                 pass
         
         
@@ -140,34 +140,33 @@ class Bot(BotBase):
             pass
             
         elif isinstance(exc, MissingRequiredArgument):
-            await ctx.send("One or more required arguments are missing")
+            await ctx.send("One or more required arguments are missing", ephemeral=True)
             
         elif isinstance(exc, CommandOnCooldown):
-            print("Command Cooldown Hit")
             retry = exc.retry_after
             if retry < 60:
                 print("Seconds")
-                await ctx.send(f"Cool it! Try again in {retry:,.2f} seconds.")
+                await ctx.send(f"Cool it! Try again in {retry:,.2f} seconds.", ephemeral=True)
             elif (retry/60) < 60:
                 print("minutes")
-                await ctx.send(f"Cool it! Try again in {(retry/60):,.2f} minutes.")
+                await ctx.send(f"Cool it! Try again in {(retry/60):,.2f} minutes.", ephemeral=True)
             elif (retry/360) < 24:
                 print("hours")
-                await ctx.send(f"Cool it! Try again in {(retry/360):,.2f} hours.")
+                await ctx.send(f"Cool it! Try again in {(retry/360):,.2f} hours.", ephemeral=True)
 
         elif isinstance(exc, NoPrivateMessage):
-            await ctx.send("Sorry, you can't use this command in a Private Message!")
+            await ctx.send("Sorry, you can't use this command in a Private Message!", ephemeral=True)
 
             
         elif isinstance(exc, CheckFailure):
-            await ctx.send("Hey! You don't have permission to do that!")
+            await ctx.send("Hey! You don't have permission to do that!", ephemeral=True)
 
         elif isinstance(exc, BadLiteralArgument):
-            await ctx.send(f"Error: Sorry, I didn't understand that selection. It might be easier if you try this command with ``/`` instead of ``{get_prefix_simple(ctx)}``")
+            await ctx.send(f"Error: Sorry, I didn't understand that selection. It might be easier if you try this command with ``/`` instead of ``{get_prefix_simple(ctx)}``", ephemeral=True)
             
         elif hasattr(exc, "original"):
             if isinstance(exc.original, Forbidden):
-                await ctx.send("I do not have permission to do that!")
+                await ctx.send("I do not have permission to do that!", ephemeral=True)
             else:
                 raise exc.original
                 
