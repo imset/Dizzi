@@ -1,20 +1,17 @@
-#from asyncio import sleep
 import asyncio
+import discord
+import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from glob import glob
-
-import discord
-
 from discord.ext.commands import (
     Bot as BotBase, CommandNotFound, BadArgument, MissingRequiredArgument, 
     CommandOnCooldown, DisabledCommand, CheckFailure, Context, when_mentioned_or, 
-    command, NoPrivateMessage
+    command, NoPrivateMessage, BadLiteralArgument
 )
 from discord.errors import (
     HTTPException, Forbidden
 )
 
-import logging
 from ..db import db
 from ..dizzidb import dbsetup
 
@@ -48,6 +45,16 @@ def get_prefix(bot, message):
         prefix = "!"
     #bot will respond
     return when_mentioned_or(prefix)(bot, message)
+
+#used to actually get the prefix instead of being practically used for the bot's prefix setting, used in the exception handler
+def get_prefix_simple(ctx):
+    try:
+        prefix = db.field("SELECT Prefix FROM guildsettings WHERE GuildID = ?", ctx.guild.id)
+    except Exception:
+        #ensure default prefix is !
+        prefix = "!"
+    #bot will respond
+    return prefix
 
 class Ready(object):
     def __init__(self):
@@ -154,6 +161,9 @@ class Bot(BotBase):
             
         elif isinstance(exc, CheckFailure):
             await ctx.send("Hey! You don't have permission to do that!")
+
+        elif isinstance(exc, BadLiteralArgument):
+            await ctx.send(f"Error: Sorry, I didn't understand that selection. It might be easier if you try this command with ``/`` instead of ``{get_prefix_simple(ctx)}``")
             
         elif hasattr(exc, "original"):
             if isinstance(exc.original, Forbidden):
