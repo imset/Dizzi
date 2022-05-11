@@ -20,18 +20,6 @@ class Testslash(Cog):
 
     #hybrid command functions
 
-    @commands.hybrid_group(fallback='get', description="Test2", usage="Testing Usage", brief="ccccccccccccccccccccccccccccccccccccccc")
-    @app_commands.guilds(discord.Object(762125363937411132))
-    async def alpha(self, ctx: commands.Context) -> None:
-        """test docstring for alphaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-        """
-        await ctx.send("Alpha")
-
-    @alpha.command()
-    async def beta(self, ctx: commands.Context) -> None:
-        await ctx.send("Beta")
-
     #context menu commands
     async def reactioncmnu(self, interaction:Interaction, message:Message):
         await interaction.response.send_message('Very cool message!')
