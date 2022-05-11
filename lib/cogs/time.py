@@ -22,7 +22,7 @@ class Time(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_group(fallback='now',
+    @commands.hybrid_group(fallback="now",
                         name="timezone",
                         aliases=["tz"],
                         brief="Get the time in HST, PST, and JST.",
