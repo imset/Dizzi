@@ -15,7 +15,8 @@ class Music(Cog):
     @command(name="musicplay",
         aliases=["muplay","mp"],
         brief="Play some tunes",
-        usage="`*PREF*mustop` - Please Stop The Music!\nExample: `*PREF*mustop`")
+        usage="`*PREF*mustop` - Please Stop The Music!\nExample: `*PREF*mustop`",
+        hidden=True)
     @guild_only()
     async def mustest(self, ctx):
         # Gets voice channel of message author
@@ -40,7 +41,8 @@ class Music(Cog):
     @command(name="musicstop",
         aliases=["mustop","ms"],
         brief="Stops any playing music",
-        usage="`*PREF*mustop` - Please Stop The Music!\nExample: `*PREF*mustop`")
+        usage="`*PREF*mustop` - Please Stop The Music!\nExample: `*PREF*mustop`",
+        hidden=True)
     @guild_only()
     async def mustop(self, ctx):
         """Stops whatever music Dizzi is playing. You must be in the same channel as Dizzi to do this."""
