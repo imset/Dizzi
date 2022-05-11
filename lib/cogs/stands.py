@@ -1,45 +1,38 @@
-from aiohttp import request
-#from random_word import RandomWords
+import aiohttp
 import asyncio
+import csv
+import re
+import string
 from random import (
     choice, randint, randrange
 )
-import csv
 
 from datetime import date, datetime
-
 from discord import (
     Member, Embed, app_commands, Interaction
 )
 from discord.ext.commands import (
     Cog, command, cooldown, BucketType, BadArgument, guild_only
 )
-
 from typing import Optional
-import string
-
 from discord.ext import tasks
-
 from discord.errors import HTTPException
-
-import re
-
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
 
 DIZZICOLOR = 0x2c7c94
 
-# with open("./lib/bot/musix.0", "r", encoding="utf=8") as tf:
-#     MUSIXTOKEN = tf.read()
-
 #lastfm api token
+#todo before dizzi is released publicly: include specific error checking for if dizzi is setup without this file.
 with open("./lib/bot/lastfm.0", "r", encoding="utf=8") as tf:
     LASTTOKEN = tf.read()
 
+#eventually this should be a function to generate stands
 def standgenerator(userdb):
     return
 
 #used to convert stand stats from numbers to letters. stats are numbers in the backend for convenience in changing them.
+#todo: change this system to be more robust, maybe with +'s and -'s
 def standstathandler(stat_value):
     letterstats = []
     for i in stat_value:
@@ -53,15 +46,13 @@ def standstathandler(stat_value):
             letterstats.append("B")
         elif int(i) == 4:
             letterstats.append("A")
-    #print(letterstats)
     return letterstats
 
 #act changing system. Must be passed in the raw tags data.
+#todo: proper commenting
 def actchange(name, tags):
     with open('./data/db/superpowers.csv') as s:
-        #lines = sum(1 for line in s)
         reader = csv.DictReader(s)
-        #header = next(reader)
         candidates = []
         tags_list = tags.lower().replace(" ", "").split(",")
         i = 0
@@ -73,10 +64,6 @@ def actchange(name, tags):
                     candidates.append(row)
             i += 1
 
-        #print(tags_list)
-        # print(chosen_tag)
-        # print(candidates)
-
         print(tags_list)
         print(chosen_tag)
 
@@ -85,20 +72,12 @@ def actchange(name, tags):
         else:
             newstand = False
 
-        # for row_number, row in enumerate(reader):
-        #     if row_number == NP_Line:
-        #         newstand = row
-
         return [newstand, chosen_tag]
-        #print(maxes)
-        # if candidates == []:
-        #     await ctx.send("Failed to find a matching tag")
-        # else:
-        #     await ctx.send(f"Woah! It worked? {candidates}")
 
 class Stands(Cog):
     def __init__(self, bot):
             self.bot = bot
+            #starts daily reset function
             self.dailyreset.start()
 
     @command(name="standroll",
@@ -181,20 +160,12 @@ class Stands(Cog):
                     seed = choice(wordlist)
                     print(seed)
 
-                    # while seed == "none":
-                    #     print("in while")
-                    #     try:
-                    #         seed = r.get_random_word(hasDictionaryDef="true", includePartOfSpeech="noun,verb,adjective", minCorpusCount=200, minDictionaryCount=1, maxLength=6).lower()
-                    #     except AttributeError:
-                    #         print("oops")
-                    #         seed = choice()
-                    #     print(seed)
                     songtitle = f"https://ws.audioscrobbler.com/2.0/?method=track.search&track={seed}&api_key={LASTTOKEN}&format=json"
                     titleset = set()
 
                     titlerand = randrange(0, 29)
 
-                    async with request("GET", songtitle, headers={}) as response:
+                    async with aiohttp.request("GET", songtitle, headers={}) as response:
                         if response.status == 200:
                             data = await response.json()
                             #print(data)
