@@ -162,7 +162,7 @@ class Bot(BotBase):
             await ctx.send("Hey! You don't have permission to do that!", ephemeral=True)
 
         elif isinstance(exc, BadLiteralArgument):
-            await ctx.send(f"Error: Sorry, I didn't understand that selection. It might be easier if you try this command with ``/`` instead of ``{get_prefix_simple(ctx)}``", ephemeral=True)
+            await ctx.send(f"Error: Sorry, I didn't understand that selection. New discord limitations mean that I have to be case-sensitive, so try your choice again in all lower case.\nIt may also be easier if you try this command with ``/`` instead of ``{get_prefix_simple(ctx)}``", ephemeral=True)
             
         elif hasattr(exc, "original"):
             if isinstance(exc.original, Forbidden):
