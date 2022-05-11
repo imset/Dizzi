@@ -1,10 +1,9 @@
+import pytz
 from discord.ext.commands import Cog
 from discord.ext.commands import command
 from discord import Embed, utils
-#for timezone handling
 from datetime import date
 from datetime import datetime, timedelta
-import pytz
 from pytz import timezone
 
 #defines the bot's embed color
