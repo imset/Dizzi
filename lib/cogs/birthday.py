@@ -23,8 +23,9 @@ from ..dizzidb import Dizzidb, dbprefix
 DIZZICOLOR = 0x2c7c94
 
 class BdMenu(ListPageSource):
-    def __init__(self, ctx, data):
+    def __init__(self, ctx, data, auto_defer=False):
         self.ctx = ctx
+        self.auto_defer = auto_defer
         # #immediately sort the all the data in the list by the second index
         data = sorted(data, key=lambda x:(x[1]))
         super().__init__(data, per_page=10)
@@ -70,14 +71,21 @@ class Birthday(Cog):
         self.bdchk.start()
         self.wishedreset.start()
 
-    @commands.hybrid_command(name="birthdayadd",
-            aliases=["bdadd", "bda"],
+    @commands.hybrid_group(name="birthday",
+                aliases=["bd", "bdl", "bda"],
+                brief="Add a birthday to the server's birthdatabase or show a list of all server birthdays",
+                usage="`*PREF*birthday add <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`\n\n`*PREF*birthday list` - Shows the birthday list.\nExample: `*PREF*bdlist`")
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def birthday(self, ctx: commands.Context) -> None:
+        await ctx.send(f"Sorry, the syntax for this command has changed.\nInstead of ``{dbprefix(ctx.guild)}birthdayadd`` or ``{dbprefix(ctx.guild)}birthdaylist``, you now need to use ``{dbprefix(ctx.guild)}birthday add`` or ``{dbprefix(ctx.guild)}birthday list`` (notice the space).\nThis command can also be invoked with ``/`` instead of {dbprefix(ctx.guild)}.")
+
+    @birthday.command(name="add",
+            #aliases=["bdadd", "bda"],
             brief="Add a birthday to the birthdatabase",
             usage="`*PREF*birthdayadd <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`")
-    @app_commands.guild_only()
     @app_commands.rename(member="user", day="date")
-    @app_commands.guilds(discord.Object(762125363937411132))
-    async def bd_add(self, ctx, member: Member, *, day: str):
+    async def bd_add(self, ctx: commands.Context, member: Member, *, day: str) -> None:
         """Add a user to Dizzi's birthday database"""
 
         # if isinstance(exc, MemberNotFound):
@@ -212,13 +220,11 @@ class Birthday(Cog):
         if isinstance(exc, MemberNotFound):
             await ctx.send("Sorry, something went wrong processing your command. Make sure you @ the user you want to add a birthday for and use a valid date.", ephemeral=True)
 
-    @commands.hybrid_command(name="birthdaylist",
-            aliases=["bdlist", "bdl"],
+    @birthday.command(name="list",
+            #aliases=["bdlist", "bdl"],
             brief="Show the list of birthdays on this server",
             usage="`*PREF*birthdaylist` - Shows the birthday list.\nExample: `*PREF*bdlist`")
-    @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
-    async def bd_list(self, ctx):
+    async def list(self, ctx: commands.Context):
         """Show a list of user birthdays on your server."""
 
         bdset = db.records("SELECT dbid, monthday FROM birthday WHERE dbid LIKE ?", f"%.{ctx.guild.id}")
@@ -244,6 +250,9 @@ class Birthday(Cog):
         #print(bdconvset)
         menu = ViewMenuPages(source=BdMenu(ctx, bdconvset))
         await menu.start(ctx)
+        #this is necessary because the menu is deferred, otherwise it'll show an ugly error to the user.
+        if ctx.interaction is not None:
+            await ctx.interaction.response.send_message(f"Success: Retrieved Birthday List for {ctx.guild.name}", ephemeral=True)
 
 
     #birthday task loop
