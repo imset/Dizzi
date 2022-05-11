@@ -1,21 +1,24 @@
 import ast
+import discord
 from typing import Optional
 
 from discord import(
-	Intents, Guild, channel, Embed,
-	File, Member
+    Intents, Guild, channel, Embed,
+    File, Member, app_commands
 )
 from discord.errors import (
-	HTTPException, Forbidden
+    HTTPException, Forbidden
 )
 from discord.ext.commands import (
-	Cog, command, CommandNotFound, BadArgument, 
-	MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure,
-	Context, guild_only
-)	
+    Cog, command, CommandNotFound, BadArgument, 
+    MissingRequiredArgument, CommandOnCooldown, DisabledCommand, CheckFailure,
+    Context, guild_only
+)   
 from discord.ext.menus import (
-	MenuPages, ListPageSource
+    MenuPages, ListPageSource
 )
+from discord.ext.menus.views import ViewMenuPages
+from discord.ext import commands
 from collections import Counter
 
 from ..db import db
@@ -25,176 +28,183 @@ DIZZICOLOR = 0x2c7c94
 
 #creates the menu for emoji stats
 class EmojiMenu(ListPageSource):
-	def __init__(self, ctx, data):
-		self.ctx = ctx
-		#immediately sort the all the data in the list by the second index
-		data = sorted(data, key=lambda x:(x[1]), reverse=True)
-		super().__init__(data, per_page=5)
+    def __init__(self, ctx, data):
+        self.ctx = ctx
+        #immediately sort the all the data in the list by the second index
+        data = sorted(data, key=lambda x:(x[1]), reverse=True)
+        super().__init__(data, per_page=5)
 
-	async def write_page(self, menu, fields=[]):
-		#offset for footers and rankings
-		offset = (menu.current_page*self.per_page) + 1
-		len_data = len(self.entries)
+    async def write_page(self, menu, fields=[]):
+        #offset for footers and rankings
+        offset = (menu.current_page*self.per_page) + 1
+        len_data = len(self.entries)
 
-		#the member is always given redundantly at index 2 of the list
-		member = fields[0][2]
+        #the member is always given redundantly at index 2 of the list
+        member = fields[0][2]
 
-		#create embed
-		embed = Embed(title=f"{member.name}'s Top Emojis for: {member.guild.name}", description="...", color=DIZZICOLOR)        
-		embed.set_thumbnail(url=member.avatar)
-		embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} Emojis.")
+        #create embed
+        embed = Embed(title=f"{member.name}'s Top Emojis for: {member.guild.name}", description="...", color=DIZZICOLOR)        
+        embed.set_thumbnail(url=member.avatar)
+        embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} Emojis.")
 
-		#i is used for the ranking value of emojis
-		i = offset
-		for key, value, member in fields:
-			#generates the fields with the emoji and its ranking
-			embed.add_field(name=f"**————————————————**\n#{i}", value=f"{key} x{value}", inline=False)
-			i += 1
+        #i is used for the ranking value of emojis
+        i = offset
+        for key, value, member in fields:
+            #generates the fields with the emoji and its ranking
+            embed.add_field(name=f"**————————————————**\n#{i}", value=f"{key} x{value}", inline=False)
+            i += 1
 
-		return embed
+        return embed
 
-	async def format_page(self, menu, entries):
-		fields = []
-		
-		for key, value, member in entries:
-			#creates the field list that will be used in write_page to add fields
-			fields.append([key, value, member])
+    async def format_page(self, menu, entries):
+        fields = []
+        
+        for key, value, member in entries:
+            #creates the field list that will be used in write_page to add fields
+            fields.append([key, value, member])
 
-		#sorts again (seems redundant but stuff breaks without this for some reason)
-		fields = sorted(fields, key=lambda x: (x[1]), reverse=True)
+        #sorts again (seems redundant but stuff breaks without this for some reason)
+        fields = sorted(fields, key=lambda x: (x[1]), reverse=True)
 
-		return await self.write_page(menu, fields)
+        return await self.write_page(menu, fields)
 
 #server emoji menu, used for server command
 class ServerEmojiMenu(ListPageSource):
-	def __init__(self, ctx, data):
-		self.ctx = ctx
-		#immediately sort the all the data in the list by the second index
-		data = sorted(data, key=lambda x:(x[1]), reverse=True)
-		super().__init__(data, per_page=5)
+    def __init__(self, ctx, data):
+        self.ctx = ctx
+        #immediately sort the all the data in the list by the second index
+        data = sorted(data, key=lambda x:(x[1]), reverse=True)
+        super().__init__(data, per_page=5)
 
-	async def write_page(self, menu, fields=[]):
-		#offset for footers and rankings
-		offset = (menu.current_page*self.per_page) + 1
-		len_data = len(self.entries)
+    async def write_page(self, menu, fields=[]):
+        #offset for footers and rankings
+        offset = (menu.current_page*self.per_page) + 1
+        len_data = len(self.entries)
 
-		#the guild is always given redundantly at index 2 of the list
-		guild = fields[0][2]
+        #the guild is always given redundantly at index 2 of the list
+        guild = fields[0][2]
 
-		#create embed
-		embed = Embed(title=f"{guild.name}'s Top Emojis", description="...", color=DIZZICOLOR)        
-		if guild.icon != None:
-			embed.set_thumbnail(url=guild.icon)
-		embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} Emojis.")
+        #create embed
+        embed = Embed(title=f"{guild.name}'s Top Emojis", description="...", color=DIZZICOLOR)        
+        if guild.icon != None:
+            embed.set_thumbnail(url=guild.icon)
+        embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} Emojis.")
 
-		#i is used for the ranking value of emojis
-		i = offset
-		for key, value, guild in fields:
-			#generates the fields with the emoji and its ranking
-			embed.add_field(name=f"**————————————————**\n#{i}", value=f"{key} x{value}", inline=False)
-			i += 1
+        #i is used for the ranking value of emojis
+        i = offset
+        for key, value, guild in fields:
+            #generates the fields with the emoji and its ranking
+            embed.add_field(name=f"**————————————————**\n#{i}", value=f"{key} x{value}", inline=False)
+            i += 1
 
-		return embed
+        return embed
 
-	async def format_page(self, menu, entries):
-		fields = []
-		
-		for key, value, member in entries:
-			#creates the field list that will be used in write_page to add fields
-			fields.append([key, value, member])
+    async def format_page(self, menu, entries):
+        fields = []
+        
+        for key, value, member in entries:
+            #creates the field list that will be used in write_page to add fields
+            fields.append([key, value, member])
 
-		#sorts again (seems redundant but stuff breaks without this for some reason)
-		fields = sorted(fields, key=lambda x: (x[1]), reverse=True)
+        #sorts again (seems redundant but stuff breaks without this for some reason)
+        fields = sorted(fields, key=lambda x: (x[1]), reverse=True)
 
-		return await self.write_page(menu, fields)
+        return await self.write_page(menu, fields)
 
 
 
 class Stats(Cog):
-	def __init__(self, bot):
-		self.bot = bot
+    def __init__(self, bot):
+        self.bot = bot
 
-	@Cog.listener()
-	async def on_ready(self):
-			if not self.bot.ready:
-				self.bot.cogs_ready.ready_up("stats")
+    @commands.hybrid_group(name="emojihistory",
+            fallback="user",
+            aliases=["emotehistory", "eh"],
+            brief="See stats on the most used emojis",
+            usage="`*PREF*emojihistory <user>` - Get a list of `<user>`'s favorite emojis on the current server. If `<user>` is not given, it defaults to your own list.\nExample: `*PREF*emojihistory @jeff`\n\n"
+                "`*PREF*emojihistory server` - Get a list of the server's favorite emojis.\nExample: `*PREF*emojihistory server`")
+    @app_commands.guild_only()
+    @app_commands.rename(member='user')
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def emojihistory(self, ctx, member: Optional[Member]):
+        """Find out what your friend's favorite emojis are. Data is based off both message emojis and reaction emojis.
+        Record keeping began on 11/1/2021.
+        Has one subcommand: ``server`` for the full server's emoji history."""
 
-	@command(name="emojihistory",
-			aliases=["emotehistory", "eh"],
-			brief="See a user's favorite emojis",
-			usage="`*PREF*emojihistory <member>` - Get a list of `<member>`'s favorite emojis on the current server. If `<member>` is not given, it defaults to your own list.\nExample: `*PREF*emojihistory @jeff`")
-	@guild_only()
-	async def emoji_history(self, ctx, member: Optional[Member]):
-		"""Find out what your friend's favorite emojis are. Data is based off both message emojis and reaction emojis.
-		Record keeping began on 11/1/2021"""
+        #set the member to the person who called the command by default
+        if member == None:
+            member = ctx.message.author
+        elif member.bot == True and member.name == "Dizzi":
+            await ctx.send(f"I'm far too busy to keep track of my own emojis!", ephemeral=True)
+            return
+        elif member.bot == True:
+            await ctx.send(f"Sorry, I don't pay attention to bots like {member.display_name}.")
+            return
 
-		#set the member to the person who called the command by default
-		if member == None:
-			member = ctx.message.author
-		elif member.bot == True and member.name == "Dizzi":
-			await ctx.send(f"I'm far too busy to keep track of my own emojis!")
-			return
-		elif member.bot == True:
-			await ctx.send(f"Sorry, I don't pay attention to bots like {member.display_name}.")
-			return
+        #create the userdb object
+        userdb = Dizzidb(member, member.guild)
 
-		#create the userdb object
-		userdb = Dizzidb(member, member.guild)
+        #try to get the emoji dictionary for the user, if not the user hasn't used emojis
+        uemojidict = userdb.dbludict("emojicount", "emojidict", userdb.dbid)
+        if uemojidict == {}:
+            await ctx.send("User hasn't used emotes on this server")
+            return
 
-		#try to get the emoji dictionary for the user, if not the user hasn't used emojis
-		uemojidict = userdb.dbludict("emojicount", "emojidict", userdb.dbid)
-		if uemojidict == {}:
-			await ctx.send("User hasn't used emotes on this server")
-			return
+        #emojilist is a list of lists that will be passed into the menu
+        emojilist = []
+        for key, value in uemojidict.items():
+            # this is hilariously inefficient but I can't figure out a better way to make this happen than by throwing the member in with every key/value
+            emojilist.append([key, value, member])
 
-		#emojilist is a list of lists that will be passed into the menu
-		emojilist = []
-		for key, value in uemojidict.items():
-			# this is hilariously inefficient but I can't figure out a better way to make this happen than by throwing the member in with every key/value
-			emojilist.append([key, value, member])
+        #start menu
+        menu = ViewMenuPages(source=EmojiMenu(ctx, emojilist))
+        await menu.start(ctx)
+        if ctx.interaction is not None:
+            await ctx.interaction.response.send_message(f"Success: Retrieved Emoji List for {member.display_name}", ephemeral=True)
 
-		#start menu
-		menu = MenuPages(source=EmojiMenu(ctx, emojilist))
-		await menu.start(ctx)
+    @emojihistory.command(name="server",
+            aliases=["serv"],
+            brief="See the server's favorite emojis",
+            usage="`*PREF*serveremojihistory` - Get a list of the server's favorite emojis. \nExample: `*PREF*emojihistory server`")
+    @app_commands.guild_only()
+    async def server_emoji_history(self, ctx):
 
-	@command(name="serveremojihistory",
-			aliases=["serveremotehistory", "seh"],
-			brief="See the server's favorite emojis",
-			usage="`*PREF*serveremojihistory` - Get a list of the server's favorite emojis. \nExample: `*PREF*seh`")
-	@guild_only()
-	async def server_emoji_history(self, ctx):
+        fullemoji = []
+        
+        #populate keys list
+        for member in ctx.guild.members:
+            if member.bot != True:
+                m = Dizzidb(member, ctx.guild)
+                d = m.dbludict("emojicount", "emojidict", m.dbid)
+                fullemoji.append(d)
 
-		fullemoji = []
-		
-		#populate keys list
-		for member in ctx.guild.members:
-			if member.bot != True:
-				m = Dizzidb(member, ctx.guild)
-				d = m.dbludict("emojicount", "emojidict", m.dbid)
-				fullemoji.append(d)
+        #fullemoji is now a list of every user followed by their emojidict. Now to iterate over them and combine them.
 
-		#fullemoji is now a list of every user followed by their emojidict. Now to iterate over them and combine them.
+        serverdict = {}
 
-		serverdict = {}
+        #thanks to https://www.kite.com/python/answers/how-to-add-values-from-two-dictionaries-in-python
+        for val in fullemoji:
+            sd_counter = Counter(serverdict)
+            val_counter = Counter(val)
 
-		#thanks to https://www.kite.com/python/answers/how-to-add-values-from-two-dictionaries-in-python
-		for val in fullemoji:
-			sd_counter = Counter(serverdict)
-			val_counter = Counter(val)
+            add_dict = sd_counter + val_counter
+            serverdict = dict(add_dict)
 
-			add_dict = sd_counter + val_counter
-			serverdict = dict(add_dict)
+        emojilist = []
+        for key, value in serverdict.items():
+            # this is hilariously inefficient but I can't figure out a better way to make this happen than by throwing the member in with every key/value
+            emojilist.append([key, value, ctx.guild])
 
-		emojilist = []
-		for key, value in serverdict.items():
-			# this is hilariously inefficient but I can't figure out a better way to make this happen than by throwing the member in with every key/value
-			emojilist.append([key, value, ctx.guild])
+        #start menu
+        menu = ViewMenuPages(source=ServerEmojiMenu(ctx, emojilist))
+        await menu.start(ctx)
+        if ctx.interaction is not None:
+            await ctx.interaction.response.send_message(f"Success: Retrieved Emoji List for {ctx.guild.name}", ephemeral=True)
 
-		#start menu
-		menu = MenuPages(source=ServerEmojiMenu(ctx, emojilist))
-		await menu.start(ctx)
-
-
-	
+    @Cog.listener()
+    async def on_ready(self):
+            if not self.bot.ready:
+                self.bot.cogs_ready.ready_up("stats")
+    
 async def setup(bot):
-	await bot.add_cog(Stats(bot))
+    await bot.add_cog(Stats(bot))

@@ -3,6 +3,9 @@ import asyncio
 import csv
 import re
 import string
+import discord
+from typing import Literal
+from discord.ext import commands
 from random import (
     choice, randint, randrange
 )
@@ -80,11 +83,12 @@ class Stands(Cog):
             #starts daily reset function
             self.dailyreset.start()
 
-    @command(name="standroll",
+    @commands.hybrid_command(name="standroll",
         aliases=["sr"],
         brief="Take hold of your destiny and acquire a stand of your own",
         usage="`*PREF*standroll` - Grab hold of your destiny.\nExample: `*PREF*standroll`")
-    @guild_only()
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
     async def roll_stand(self, ctx):
         """Indeed Jotaro, what you have called an "evil spirit" is but a powerful vision created by your own life energy! And since it stands next to you, it is called... a **Stand!** """
         userdb = Dizzidb(ctx.author, ctx.guild)
@@ -251,11 +255,12 @@ class Stands(Cog):
                     await ctx.send("Failure! You feel your connection to your stand disappear!\nPerhaps you are not yet fated to have a power of your own yet... try again?")
                     db.execute("DELETE FROM stand WHERE UserID = (?)", userdb.uid)
 
-    @command(name="standinfo",
+    @commands.hybrid_command(name="standinfo",
         aliases=["si"],
         brief="See info about your stand or someone else's",
         usage="`*PREF*standinfo` - Learn about your true powers.\nExample: `*PREF*standinfo`")
-    @guild_only()
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
     async def stand_info(self, ctx, member: Optional[Member]):
         """Tells you info about your stand, if you have one. If not, try ;standroll"""
 
@@ -359,39 +364,40 @@ class Stands(Cog):
 
                 await ctx.send(embed=embed)
 
-    @command(name="approach",
-    aliases=["a"],
-    brief="Approach someone for combat (not yet implemented)",
-    usage="`*PREF*approach` - Stand Users Attract Other Stand Users.\nExample: `*PREF*approach @dizzi`")
-    @guild_only()
-    async def approach(self, ctx, member: Optional[Member]):
-        """Approach someone for combat (not yet implemented)"""
-        if member != None:
-            await ctx.send(f"Oh? You're approaching {member.display_name}? Instead of waiting for this command to actually be implemented, you're coming right at them?")
-        else:
-            await ctx.send(f"Oh? You're approaching someone? Instead of waiting for this command to actually be implemented, you're coming right at them?")
+    # @command(name="approach",
+    # aliases=["a"],
+    # brief="Approach someone for combat (not yet implemented)",
+    # usage="`*PREF*approach` - Stand Users Attract Other Stand Users.\nExample: `*PREF*approach @dizzi`")
+    # @guild_only()
+    # async def approach(self, ctx, member: Optional[Member]):
+    #     """Approach someone for combat (not yet implemented)"""
+    #     if member != None:
+    #         await ctx.send(f"Oh? You're approaching {member.display_name}? Instead of waiting for this command to actually be implemented, you're coming right at them?")
+    #     else:
+    #         await ctx.send(f"Oh? You're approaching someone? Instead of waiting for this command to actually be implemented, you're coming right at them?")
 
 
-    @command(name="shop",
-    aliases=["standshop"],
+    @commands.hybrid_command(name="standshop",
+    aliases=["shop"],
     brief="Buy items to improve and protect your stand",
     usage="`*PREF*shop` - Check out the fortune teller's shop.\n`*PREF*shop <item>` - Buy an item.\nExample: `*PREF*shop Daily`")
-    @guild_only()
-    async def shop(self, ctx, *, item: Optional[str]):
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def shop(self, ctx, *, item: Literal['daily', 'enhancer', 'changer', 'browse']):
         """Check out the mysterious fortune teller's shop.
         Item descriptions:
-        `Daily` - A Daily bonus of free arrowheads. Can give between 1 and 3.
-        `Enhancer` - Enhances your stand. Randomly increases stats, but always lowers potential by 1 stage.
-        `Act Changer` - Randomly increases stats, guaranteed to increase potential by 1 stage, and gives the stand a new ability that is somehow related to their old one.
-        `Ward Charm` - Stops an enemy from messing with your stand if they beat you in combat.
-        `Soul Snack` - Gives +20% energy for your weary stand
-        `Seance` - Remove a curse from your stand
+        `daily` - A Daily bonus of free arrowheads. Can give between 1 and 3.
+        `enhancer` - Enhances your stand. Randomly increases stats, but always lowers potential by 1 stage.
+        `changer` - Randomly increases stats, guaranteed to increase potential by 1 stage, and gives the stand a new ability that is somehow related to their old one.
+        `charm` - Stops an enemy from messing with your stand if they beat you in combat.
+        `snack` - Gives +20% energy for your weary stand
+        `seance` - Remove a curse from your stand
         """
         userdb = Dizzidb(ctx.author, ctx.guild)
         arrows = db.field(f"SELECT arrowheads FROM arrows WHERE UserID = ?", userdb.uid)
         dailystatus = db.field(f"SELECT shopclaim FROM arrows WHERE UserID = ?", userdb.uid)
 
-        if item == None:
+        if item == None or item.lower() == 'browse':
             embed = Embed(title=f"Fortune Teller's Shop", description="Welcome! \nCare to take a look at my wares?", color=DIZZICOLOR)
             embed.set_thumbnail(url="https://static.jojowiki.com/images/thumb/5/5c/latest/20200809171105/Avdol_Infobox_OVA.png/400px-Avdol_Infobox_OVA.png")
             embed.set_footer(text=f"You have {arrows} arrowheads. \nBuy items with {dbprefix(ctx.guild)}shop <item>\nWant to know what an item does? Try {dbprefix(ctx.guild)}help shop")
@@ -399,7 +405,7 @@ class Stands(Cog):
             if dailystatus == 0:
                 embed.add_field(name=f"————————————————\n", value="**Daily** - [FREE]", inline=False)
             embed.add_field(name=f"————————————————\n", value="**Enhancer** - [1 Arrowhead]", inline=False)
-            embed.add_field(name=f"————————————————\n", value="**Act Changer** - [3 Arrowheads]", inline=False)
+            embed.add_field(name=f"————————————————\n", value="**Changer** - [3 Arrowheads]", inline=False)
             #embed.add_field(name=f"————————————————\n", value="**Reroller** - [5 Arrowheads]", inline=False)
             #embed.add_field(name=f"————————————————\n", value="**Ward Charm** - [5 Arrowheads]", inline=False)
             #embed.add_field(name=f"————————————————\n", value="**Soul Snack** - [10 Arrowheads]", inline=False)

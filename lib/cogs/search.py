@@ -6,6 +6,7 @@ from typing import Optional
 from discord.errors import (
     HTTPException, Forbidden
 )
+from discord.app_commands.errors import CommandInvokeError
 from discord.ext import commands
 from discord.ext.commands import (
     Cog, command, Context,
@@ -106,14 +107,32 @@ class Search(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name="anisource",
-            aliases=["anisauce", "as"],
+    @commands.hybrid_group(name="sauce",
+                        aliases=['s'],
+                        brief="Reverse image lookup, specialized for anime or manga.",
+                        usage="`*PREF*sauce anime <img>` - Searches `<img>` on trace.moe. `<img>` can be an image url, an image uploaded with the command, or a replied image.\n"
+                            "Example: `*PREF*sauce anime https://i.imgur.com/zmXLgvW.gif`\n\n"
+                            "`*PREF*sauce other <img>` - Searches `<img>` on SauceNao. `<img>` can be an image url, an image uploaded with the command, or a replied image.\n"
+                            "Example: `*PREF*sauce other https://i.imgur.com/zmXLgvW.gif`")
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def sauce(self, ctx, img: Optional[str]):
+        """
+        Reverse image lookup powered by SauceNao or Trace.Moe.
+        Has two subcommands: ``anime`` for anime searching, and ``other`` for anything besides anime (manga, fanart, etc.)
+        Note: usage limitations require that you can only use each subcommand a limited number of times per day (currently 10).
+        Also, if invoked via ``/``, ``sauce`` will only function with image urls, not through replies or uploaded images.
+        """
+        await ctx.send(f"Sorry, the syntax for this command has changed.\nInstead of ``{dbprefix(ctx.guild)}sauce <img>`` or ``{dbprefix(ctx.guild)}anisauce <img>``, you now need to use ``{dbprefix(ctx.guild)}sauce anime <img>`` or ``{dbprefix(ctx.guild)}sauce other <img>`` (notice the space).\nThis command can also be invoked with ``/`` instead of {dbprefix(ctx.guild)}.")
+
+    @sauce.command(name="anime",
+            #aliases=["anisauce", "as"],
             brief="Highly detailed reverse lookup specifically for anime, powered by trace.moe",
             usage="`*PREF*anisource <img>` - Searches `<img>` on trace.moe. `<img>` can be an image url, an image uploaded with the command, or a replied image.\n"
             "Example: `*PREF*anisource https://i.imgur.com/zmXLgvW.gif`")
+    @app_commands.rename(img="image_url")
+    @app_commands.checks.cooldown(10, 86400, key=lambda i: (i.guild_id, i.user.id))
     @max_concurrency(1, per=BucketType.default, wait=True)
-    @cooldown(10, 86400, BucketType.member)
-    async def anisource(self, ctx, img: Optional[str]):
+    async def anisource(self, ctx, img = None):
         """
         Search an anime picture on Trace.moe, and get back the source and its video context.
         Note: trace.moe usage limitations require that you can only use this command a limited number of times per day (currently 10).
@@ -151,14 +170,15 @@ class Search(Cog):
             else:
                 await ctx.send(f"API returned a {response.status} status. Try using {pref}source / {pref}s to search instead.")
 
-    @command(name="source",
-            aliases=["sauce", "s"],
+    @sauce.command(name="other",
+            #aliases=["sauce", "s"],
             brief="More general reverse image lookup for anime/manga/fanart, powered by SauceNao",
             usage="`*PREF*anisource <img>` - Searches `<img>` on SauceNao. `<img>` can be an image url, an image uploaded with the command, or a replied image.\n"
             "Example: `*PREF*source https://i.imgur.com/zmXLgvW.gif`")
+    @app_commands.rename(img="image_url")
+    @app_commands.checks.cooldown(10, 86400, key=lambda i: (i.guild_id, i.user.id))
     @max_concurrency(1, per=BucketType.default, wait=True)
-    @cooldown(10, 86400, BucketType.member)
-    async def source(self, ctx, img: Optional[str]):
+    async def othersource(self, ctx, img = None):
         """
         Search a picture on SauceNao, and get back the closest match to its source.
         If you have a screenshot from an anime, you can also use ;as to use the more powerful Trace.moe search.
