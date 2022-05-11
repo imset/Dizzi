@@ -1,27 +1,26 @@
-from aiohttp import request
+import aiohttp
+import re
 import asyncio
+import discord
+import enum
+from typing import Literal
 from random import (
     choice, randint
 )
 from mediawiki import (
     MediaWiki, exceptions
 )
-
 from discord import (
     Member, Embed, app_commands, Interaction
 )
-from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument, guild_only
-)
-
-from discord.ext import tasks
-
+from discord.app_commands import Choice
+from discord.ext import commands, tasks
 from discord.errors import HTTPException
-
+from discord.ext.commands import (
+    Cog, command, cooldown, BucketType, BadArgument, guild_only, BadLiteralArgument
+)
+from discord.ext.commands.errors import MemberNotFound
 from datetime import date, datetime
-
-import re
-
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
 
@@ -30,81 +29,85 @@ DIZZICOLOR = 0x2c7c94
 
 class Fun(Cog):
     """Test description for fun cog"""
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot) -> None:
+        self.bot: commands.Bot = bot
         # tree = bot.tree
         
-    @command(name="roll",
+    @commands.hybrid_command(name="roll",
         aliases=["r"],
         brief="Roll some dice",
         usage="`*PREF*roll <die_string>` - Rolls dice. A valid `<die string>` is in the format XdY+Z or XdY-Z,"
         " where X is the number of dies to roll, Y is the value of the die, and Z is a bonus to apply at the end.\n"
         "Example: `*PREF*roll 2d20+5`")
-    async def roll_dice(self, ctx, *, die_string: str):
+    @app_commands.rename(die_string="dice")
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def roll_dice(self, ctx: commands.Context, *, die_string: str) -> None:
         """Rolls a dice with optional bonus (+ or -)"""
-
-        dnum, dval = (dice for dice in die_string.lower().split("d"))
-        #this makes it so "d20" gets read as "1d20"
         try:
-            dnum = int(dnum)
-        except ValueError:
-            dnum = 1
-        
-        #handle + or - operation into dbns. dbns is handled the same either way but the - causes it to be negative.
-        if "+" in dval:
-            dval, dbns = (int(dice) for dice in dval.lower().split("+"))
-            operator = "+"
-        elif "-" in dval:
-            dval, dbns = (int(dice) for dice in dval.lower().split("-"))
-            dbns = int(0-dbns)
-            operator = "-"
-        else:
-            dbns = 0
-            dval = int(dval)
-        
-        #limit values
-        if dnum > 100 or dval > 100 or dbns > 100:
-            await ctx.send("Error: please limit sides/rolls/bonus to 100 max.")
-            return
-            
+            dnum, dval = (dice for dice in die_string.lower().split("d"))
 
-        rolls = [randint(1, dval) for i in range(dnum)]
-        rollstr = [str(r) for r in rolls]
-        i = 0
+            dnum = int(dnum)
         
-        while i < len(rolls):
-            if rolls[i] == dval:
-                rollstr[i] = "**" + rollstr[i] + "**"
+            #handle + or - operation into dbns. dbns is handled the same either way but the - causes it to be negative.
+            if "+" in dval:
+                dval, dbns = (int(dice) for dice in dval.lower().split("+"))
+                operator = "+"
+            elif "-" in dval:
+                dval, dbns = (int(dice) for dice in dval.lower().split("-"))
+                dbns = int(0-dbns)
+                operator = "-"
             else:
-                #rolls[i] = str(rolls[i])
-                pass
-            i += 1
+                dbns = 0
+                dval = int(dval)
             
-        finalrollstr = " + ".join(rollstr)
-        rollsum = sum(rolls)
-        
-        if int(dnum) != 1:
-            if dbns == 0:
-                await ctx.send(finalrollstr + " = " + str(rollsum))
-            else:
-                await ctx.send(finalrollstr + " = " + str(rollsum) + "\n" + str(rollsum) + f" {operator} *" + 
-                                str(abs(dbns)) + "* = __**" + str(rollsum + dbns) + "**__")
-        else:
-            if dbns == 0:
-                await ctx.send(finalrollstr)
-            else:
-                await ctx.send(finalrollstr + f" {operator} *" + str(abs(dbns)) + "* = __**" + str(rollsum + dbns) + "**__")
+            #limit values
+            if dnum > 100 or dval > 100 or dbns > 100:
+                await ctx.send("Error: please limit sides/rolls/bonus to 100 max.")
+                return
+                
+
+            rolls = [randint(1, dval) for i in range(dnum)]
+            rollstr = [str(r) for r in rolls]
+            i = 0
             
-    
-    @command(name="slap",
+            while i < len(rolls):
+                if rolls[i] == dval:
+                    rollstr[i] = "**" + rollstr[i] + "**"
+                else:
+                    #rolls[i] = str(rolls[i])
+                    pass
+                i += 1
+                
+            finalrollstr = " + ".join(rollstr)
+            rollsum = sum(rolls)
+            
+            if int(dnum) != 1:
+                if dbns == 0:
+                    await ctx.send(finalrollstr + " = " + str(rollsum))
+                else:
+                    await ctx.send(finalrollstr + " = " + str(rollsum) + "\n" + str(rollsum) + f" {operator} *" + 
+                                    str(abs(dbns)) + "* = __**" + str(rollsum + dbns) + "**__")
+            else:
+                if dbns == 0:
+                    await ctx.send(finalrollstr)
+                else:
+                    await ctx.send(finalrollstr + f" {operator} *" + str(abs(dbns)) + "* = __**" + str(rollsum + dbns) + "**__")  
+        except ValueError:
+            await ctx.send("Error: Dice must be in the form XdY+Z or XdY-Z, where X, Y, and Z are numbers between 1 and 100. See ``/help roll`` for more info.", ephemeral=True)
+            return
+
+    @commands.hybrid_command(name="slap",
             aliases=["hit"],
             brief="Slap someone for a reason",
             usage="`*PREF*slap <member> <reason>` - Slaps a `<member>` for a `<reason>`. The `<member>` should be properly"
             " pinged with @, the `<reason>` can be any text string to display after the slap. \nExample: `*PREF*slap @dizzi for no reason`")
-    @cooldown(2, 5, BucketType.member)
-    async def slap_member(self, ctx, member: Member, *, reason: str = ""):
+    @app_commands.rename(member="user")
+    @app_commands.checks.cooldown(2, 5, key=lambda i: (i.guild_id, i.user.id))
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def slap_member(self, ctx: commands.Context, member: Member, *, reason: str = "") -> None:
         """Slap someone for any reason."""
-        
+
         #the most weirdly comprehensive slap command ever, I want the reasons to make sense
         if reason != "":
             reasonlist = reason.split()
@@ -139,40 +142,44 @@ class Fun(Cog):
             reason = " ".join(reasonlist)
         else:
             reason = "for no reason"
-        await ctx.send(f"{ctx.author.display_name} slapped {member.mention} {reason}.")
+        await ctx.send(f"{ctx.interaction.user.display_name} slapped {member.mention} {reason}.")
         
 
-    @command(name="art",
+    @commands.hybrid_command(name="art",
             aliases=["avatar"],
             brief="Credits for my wonderful avatar",
             usage="`*PREF*art` - Credit where credit is due\nExample: `*PREF*art`")
-    async def art_source(self, ctx):
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def art_source(self, ctx: commands.Context) -> None:
+        """Art credits for Dizzi's amazing avatar"""
         embed = Embed(title=f"Dizzi Art Source", description="Avatar is by @holdenkip.art on Instagram", color=DIZZICOLOR)
         embed.set_image(url=ctx.guild.me.avatar)
         await ctx.send(embed=embed)
 
     @slap_member.error
     async def slap_member_error(self, ctx, exc):
-        if isinstance(exc, BadArgument):
+        if isinstance(exc, MemberNotFound):
             await ctx.send("I can't find that user. Make sure you ping them!")
+            return
         
     @command(name="echo",
             aliases=["say"],
             brief="Repeat stuff, repeat stuff",
             usage="`*PREF*echo <message>` - Dizzi will repeat `<message>`\nExample: `*PREF*echo Hello World!`")
-    async def echo_member(self, ctx, *, message):
-        """Turn your own measly words into the words of the powerful Dizzi."""
-        
+    async def echo_member(self, ctx, *, message) -> None:
+        """NOTE: THIS COMMAND DOES NOT HAVE A SLASH COMMAND VERSION.
+        Turn your own measly words into the words of the powerful Dizzi."""
         await ctx.message.delete()
         await ctx.send(message)
 
-    
-    @command(name="animalfact",
+
+    @commands.hybrid_command(name="animalfact",
             aliases=["af"],
             brief="Get a fact about an animal",
             usage="`*PREF*animalfact <animal>` - gives a random animal fact and picture for a supported `<animal>`.\n"
             "Example: `*PREF*animalfact koala`")
-    async def animal_fact(self, ctx, animal: str):
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def animal_fact(self, ctx: commands.Context, animal: Literal['dog', 'cat', 'panda', 'fox', 'koala', 'bird', 'raccoon', 'kangaroo']) -> None:
         """Get a random fact and picture for the supported animals 
         Currently supported animals:
             `Dog`
@@ -189,7 +196,7 @@ class Fun(Cog):
         if animal.lower() in ("dog", "cat", "panda", "fox", "koala", "bird", "raccoon", "kangaroo"):
             URL = f"https://some-random-api.ml/animal/{animal.lower()}"
             
-            async with request("GET", URL, headers={}) as response:
+            async with aiohttp.request("GET", URL, headers={}) as response:
                 if response.status == 200:
                     data = await response.json()
                     embed = Embed(title=f"{animal.title()} fact", description=data["fact"], color=DIZZICOLOR)
@@ -201,20 +208,20 @@ class Fun(Cog):
         else:
             await ctx.send("No facts are available for that animal. Use help animalfact to get a list of supported animals.")
             
-            
-    @command(name="morelike",
+    @commands.hybrid_command(name="morelike",
             aliases=["ml"],
             brief="Get a scathing rhyme",
             usage="`*PREF*morelike <rhyme>` - gives you a word that rhymes with `<rhyme>`.\nExample: `*PREF*morelike Dog`")
-    @cooldown(2, 10, BucketType.member)
-    async def more_like(self, ctx, rhyme: str):
+    @app_commands.checks.cooldown(2, 10)
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def more_like(self, ctx: commands.Context, rhyme: str) -> None:
         """Get a scathing rhyme about a word of your choice. Useless? More like lupus.
         Powered by https://rhymebrain.com/"""
 
         #remove whitespace
         rhyme.replace(" ", "")
         URL = f"https://rhymebrain.com/talk?function=getRhymes&word={rhyme.lower()}"
-        async with request("GET", URL, headers={}) as response:
+        async with aiohttp.request("GET", URL, headers={}) as response:
             if response.status == 200:
                 data = await response.json()
                 
@@ -233,16 +240,17 @@ class Fun(Cog):
                 
                 await ctx.send(f"{rhyme.title()}? More like **{choice(rhymelist)}**!")
             else:
-                print(f"API returned a {response.status} status.")
+                await ctx.send(f"Error: API returned a {response.status} status. This is probably not Dizzi's fault. Try again later.")
     
-    @command(name="wikipedia",
+    @commands.hybrid_command(name="wikipedia",
             aliases=["wp"],
             brief="Search up an article on wikipedia",
             usage="`*PREF*wikipedia <page>` - gives a brief summary for the given wikipedia `<page>`. "
             "If an exact match is not found, the closest relevant one will be given.\nExample: `*PREF*wikipedia discord`")
-    async def wikipedia_member(self, ctx, *, page: str):
+    @app_commands.checks.cooldown(2, 10)
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def wikipedia_member(self, ctx: commands.Context, *, page: str) -> None:
         """Too lazy to use google? Ask Dizzi to look up wikipedia articles and get a brief summary + link"""
-
 
         wikipedia = MediaWiki(user_agent='py-Dizzi-Discord-Bot')
         message = await ctx.send(f"Searching {page.title()} on Wikipedia")
@@ -291,127 +299,13 @@ class Fun(Cog):
         db.execute("UPDATE alert SET alertset = ? WHERE dbid = ?", str(alertset), memberdb.dbid)
         await ctx.send(f"Alright, I'll keep track of {member.name} and let you know when they post in {ctx.guild.name} next.")
 
-    @command(name="deflect",
+    @commands.hybrid_command(name="deflect",
             brief="Deflect a beam",
             usage="`*PREF*deflect` - It'll take more than that!\nExample: `*PREF*deflect`")
+    @app_commands.guilds(discord.Object(762125363937411132))
     async def deflect(self, ctx):
         """Deflect a beam of energy so that it'll harmlessly hit a mountain in the background instead."""
         await ctx.send("https://i.imgur.com/MYI8EJh.gif")
-
-
-    # @command(name="birthdayadd",
-    #         aliases=["bdadd"],
-    #         brief="Add a birthday to the birthdatabase",
-    #         usage="`*PREF*birthdayadd <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`")
-    # async def bd_add(self, ctx, member: Member, *, day: str):
-    #     """Add a user to Dizzi's birthday database"""
-    #     if member.bot == True and member.name == "Dizzi":
-    #         await ctx.send(f"I'm flattered, but I already know my birthday is October 3rd!")
-    #         return
-    #     elif member.bot == True:
-    #         await ctx.send(f"Sorry, I don't wish birthdays to weird bots like {member.display_name}.")
-    #         return
-
-    #     #first check if string has '/' for the format xx/xx/xxxx
-    #     if "/" in day:
-    #         day.strip()
-    #         daylist = day.split('/')
-    #         if len(daylist[0]) == 1:
-    #             monthval = f"0{daylist[0]}"
-    #         else:
-    #             monthval = daylist[0]
-    #         if len(daylist[1]) == 1:
-    #             dayval = f"0{daylist[1]}"
-    #         else:
-    #             dayval = daylist[1]
-    #         if len(daylist[2]) == 1:
-    #             yearval = f"0{daylist[2]}"
-    #         else:
-    #             yearval = daylist[2]
-    #     else:
-    #         #make everything lowercase
-    #         day = day.lower()
-    #         #now we need to search for a month, day, and year. Year should be 4 digits, month will be searched with a month code, day will be what's left
-    #         #by default we assume the date is split by spaces here
-    #         daylist = day.split(' ')
-    #         for i in daylist:
-    #             if "jan" in i:
-    #                 monthval = "01"
-    #                 break
-    #             elif "feb" in i:
-    #                 monthval = "02"
-    #                 break
-    #             elif "mar" in i:
-    #                 monthval = "03"
-    #                 break
-    #             elif "apr" in i:
-    #                 monthval = "04"
-    #                 break
-    #             elif "may" in i:
-    #                 monthval = "05"
-    #                 break
-    #             elif "jun" in i:
-    #                 monthval = "06"
-    #                 break
-    #             elif "jul" in i:
-    #                 monthval = "07"
-    #                 break
-    #             elif "aug" in i:
-    #                 monthval = "08"
-    #                 break
-    #             elif "sep" in i:
-    #                 monthval = "09"
-    #                 break
-    #             elif "oct" in i:
-    #                 monthval = "10"
-    #                 break
-    #             elif "nov" in i:
-    #                 monthval = "11"
-    #                 break
-    #             elif "dec" in i:
-    #                 monthval = "12"
-    #                 break
-
-    #         #now that we have the month, we need to disambiguate the year and the day. Using code from https://www.sanfoundry.com/python-program-count-number-digits/
-    #         #to count digits - years should be 4 digits, day should be 1 or 2.
-
-    #         #first remove all non-digits from each entry in daylist.
-    #         i0 = re.sub('\D', '', daylist[0])
-    #         i1 = re.sub('\D', '', daylist[1])
-    #         i2 = re.sub('\D', '', daylist[2])
-    #         daylisttemp = [i0, i1, i2]
-
-    #         #now we need to iterate over each one and find the 4 digit year
-    #         for i in daylisttemp:
-    #             if i == '':
-    #                 continue
-    #             j = int(i)
-    #             count=0
-    #             while(j>0):
-    #                 count=count+1
-    #                 j=j//10
-    #             if count == 4:
-    #                 yearval = i
-    #             else:
-    #                 if len(i) == 1:
-    #                     dayval = f"0{i}"
-    #                 else:
-    #                     dayval = i
-
-    #     #shorten the year to the last two digits
-    #     yearval = str(yearval)[-2:]
-
-    #     finalmonthday = f"{monthval}/{dayval}"
-
-
-    #     #set the Dizzidb object as the mentioned member for lookup, also create normal userdb
-    #     memberdb = Dizzidb(member, member.guild)
-    #     #add them to the database
-    #     db.execute("INSERT or IGNORE INTO birthday (dbid) VALUES (?)", memberdb.dbid)
-    #     #add the user's dbid into the alertdict
-    #     db.execute("UPDATE birthday SET monthday = ? WHERE dbid = ?", finalmonthday, memberdb.dbid)
-    #     db.execute("UPDATE birthday SET year = ? WHERE dbid = ?", yearval, memberdb.dbid)
-    #     await ctx.send(f"Alright, I've added {finalmonthday}/{yearval} as {member.name}'s birthday. I'll be sure to wish them a happy birthday!")
 
     @Cog.listener()
     async def on_message(self, message):
@@ -432,34 +326,6 @@ class Fun(Cog):
                 db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
             else:
                 return
-
-    # #birthday task loop
-    # @tasks.loop(minutes = 60.0)
-    # async def bdchk(self):
-    #     #check if there's any birthdays today
-    #     todaybds = db.column("SELECT dbid FROM birthday WHERE monthday = ?", str(date.today().strftime("%m/%d")))
-    #     if todaybds == [] or todaybds == "":
-    #         return
-    #     else:
-    #         for i in todaybds:
-    #             wished = db.column("SELECT wished FROM birthday WHERE dbid = ?", i)
-    #             if wished != 0 and datetime.now().hour >= 8:
-    #                 splitset = i.split(".")
-    #                 bduser = await self.bot.fetch_user(splitset[0])
-    #                 bdguild = await self.bot.fetch_guild(splitset[1])
-    #                 userdb = Dizzidb(bduser, bdguild)
-    #                 welcomechannel = db.field("SELECT Welcome FROM guildsettings WHERE GuildID = ?", userdb.gid)
-    #                 ping = await self.bot.fetch_user(userdb.uid)
-    #                 print(f"Happy birthday dear {ping.display_name}")
-    #                 channelpush = await self.bot.fetch_channel(int(welcomechannel))
-    #                 await channelpush.send(f"**Today is {ping.mention}'s birthday**!")
-    #                 wished = 1
-    #                 db.execute("UPDATE birthday SET wished = ? WHERE dbid = ?", 1, i)
-
-    # @tasks.loop(minutes = 60.0)
-    # async def wishedreset(self):
-    #     if datetime.now().hour < 8:
-    #         db.execute("UPDATE birthday SET wished = ?", 0)
 
     @Cog.listener()
     async def on_ready(self):
