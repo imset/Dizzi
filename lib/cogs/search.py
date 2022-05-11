@@ -43,19 +43,19 @@ def sauce_request(url) -> dict:
     reqdict = {}
 
     if bool(results):
-    for i in dir(results[0]):
-        if not str(i).startswith("_"):
-            reqdict[str(i)] = i
-            keylist.append(str(i))
-            vallist.append(i)
+        for i in dir(results[0]):
+            if not str(i).startswith("_"):
+                reqdict[str(i)] = i
+                keylist.append(str(i))
+                vallist.append(i)
 
     print 
 
     if bool(results):
-    for i in get_attrs(best):
-        #print(best.i)
-        pass
-    reqdict = dict(zip(keylist, vallist))
+        for i in get_attrs(best):
+            #print(best.i)
+            pass
+        reqdict = dict(zip(keylist, vallist))
 
     reqdict = {
     "number": len(results),
@@ -142,12 +142,10 @@ class Search(Cog):
                 embed = Embed(title=f"Best Guess: {tmtitle}", description=f"Episode: {tmepi}", color=DIZZICOLOR)
                 embed.add_field(name=f"Video: {tmvideo}", value=f"Similarity: {tmsimi}")
                 embed.set_thumbnail(url=tmimage)
-                embed.add_field(name="Note:", value="Because of limitations with the free version of Trace.moe, you can only use this command 10x per 24hr period.",
-                                inline=False)
+                embed.add_field(name="Note:", value="Because of limitations with the free version of Trace.moe, you can only use this command 10x per 24hr period.", inline=False)
                 embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nYou can also try {pref}source / {pref}s for a more general search.")
+                await ctx.send(embed=embed)
 
-            
-            await ctx.send(embed=embed)
             elif response.status == 402:
                 await ctx.send(f"Dizzi has maxed out on its monthly alotted searches with Trace.Moe. Try using {pref}source / {pref}s to search instead.")
             else:
@@ -174,7 +172,6 @@ class Search(Cog):
             img = await get_imgurl(ctx)
 
         saucedict = sauce_request(img)
-        print(saucedict)
 
         if saucedict == {}:
             await ctx.send(f"SauceNao couldn't find anything on that image. Sorry!")
@@ -200,7 +197,7 @@ class Search(Cog):
 
             await ctx.send(embed=embed)
 
-  @Cog.listener()
+    @Cog.listener()
     async def on_ready(self):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("search")
