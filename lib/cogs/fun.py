@@ -22,7 +22,7 @@ from discord.ext.commands import (
 from discord.ext.commands.errors import MemberNotFound
 from datetime import date, datetime
 from ..db import db
-from ..dizzidb import Dizzidb, dbprefix
+from ..dizzidb import Dizzidb
 
 DIZZICOLOR = 0x2c7c94
 
