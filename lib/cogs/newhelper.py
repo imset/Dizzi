@@ -40,7 +40,7 @@ class HelpMenu(ListPageSource):
 		offset = (menu.current_page*self.per_page) + 1
 		len_data = len(self.entries)
 		
-		embed = Embed(title="Dizzi's Command Help", description=f"What can I help you with? \n(use {dbprefix(self.ctx.guild)}help <command> for more info about a specific command)",color=DIZZICOLOR)
+		embed = Embed(title="Dizzi's Command Help", description=f"Use ``/help <command>`` or ``{dbprefix(self.ctx.guild)}help <command>`` for more info about a specific command)\n Most commands can be invoked with either ``/``, ``{dbprefix(self.ctx.guild)}``, or by pinging Dizzi directly.",color=DIZZICOLOR)
 		
 		#embed.set_thumbnail(url=self.ctx.guild.me.avatar)
 		embed.set_thumbnail(url=self.ctx.me.avatar)
