@@ -54,6 +54,7 @@ class Settings(Cog):
             brief="Change the default prefix to use Dizzi commands",
             usage="`*PREF*prefix <new>` - changes the server prefix for Dizzi into the value for `<new>`.\nExample: `*PREF*prefix +`")
     @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.rename(new="prefix")
     @app_commands.guild_only()
     @app_commands.guilds(discord.Object(762125363937411132))
     async def change_prefix(self, ctx: commands.Context, new: str) -> None:
@@ -66,7 +67,8 @@ class Settings(Cog):
             await ctx.send(f"Prefix set to {new}.")
 
     @commands.hybrid_command(name="dbsetup",
-            hidden=True)
+            hidden=True,
+            with_app_command=False)
     @app_commands.check(check_owner)
     @app_commands.guild_only()
     @app_commands.guilds(discord.Object(762125363937411132))
@@ -82,7 +84,8 @@ class Settings(Cog):
 
     @commands.hybrid_command(name="emoteservhist",
             aliases=["esh"],
-            hidden=True)
+            hidden=True,
+            with_app_command=False)
     @app_commands.check(check_owner)
     @app_commands.guild_only()
     @app_commands.guilds(discord.Object(762125363937411132))
@@ -159,7 +162,8 @@ class Settings(Cog):
 
     @commands.hybrid_command(name="emotechannelhis",
             aliases=["ech"],
-            hidden=True)
+            hidden=True,
+            with_app_command=False)
     @app_commands.check(check_owner)
     @app_commands.guild_only()
     @app_commands.guilds(discord.Object(762125363937411132))
