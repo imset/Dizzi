@@ -74,10 +74,11 @@ class Birthday(Cog):
     @commands.hybrid_group(name="birthday",
                 aliases=["bd", "bdl", "bda"],
                 brief="Add a birthday to the server's birthdatabase or show a list of all server birthdays",
-                usage="`*PREF*birthday add <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`\n\n`*PREF*birthday list` - Shows the birthday list.\nExample: `*PREF*bdlist`")
+                usage="`*PREF*birthday add <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*birthday add @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`\n\n`*PREF*birthday list` - Shows the birthday list.\nExample: `*PREF*birthday list`")
     @app_commands.guild_only()
     @app_commands.guilds(discord.Object(762125363937411132))
     async def birthday(self, ctx: commands.Context) -> None:
+        """Dizzi will handle birthdays for your server. Has two subcommands: ``list`` and ``add``."""
         await ctx.send(f"Sorry, the syntax for this command has changed.\nInstead of ``{dbprefix(ctx.guild)}birthdayadd`` or ``{dbprefix(ctx.guild)}birthdaylist``, you now need to use ``{dbprefix(ctx.guild)}birthday add`` or ``{dbprefix(ctx.guild)}birthday list`` (notice the space).\nThis command can also be invoked with ``/`` instead of {dbprefix(ctx.guild)}.")
 
     @birthday.command(name="add",
