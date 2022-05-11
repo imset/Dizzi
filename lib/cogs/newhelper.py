@@ -110,6 +110,8 @@ class NewHelper(Cog):
         if cmd is None:
             menu = ViewMenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
             await menu.start(ctx)
+            if ctx.interaction is not None:
+                await ctx.interaction.response.send_message(f"Success: Retrieved Help Docs", ephemeral=True)
             
         else:
             if (commandinput := get(self.bot.commands, name=cmd)):
@@ -127,11 +129,12 @@ class NewHelper(Cog):
                 
                 #if the coglist is empty, search fails
                 if not len(coglist):    
-                    await ctx.send("That command or command group does not exist.", ephemeral=True)
+                    await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
                 else:
                     menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
                     await menu.start(ctx)
-    
+                    if ctx.interaction is not None:
+                        await ctx.interaction.response.send_message(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
     @show_newhelp.error
     async def show_newhelp_error(self, ctx, exc):
         if isinstance(exc, AttributeError):
