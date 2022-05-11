@@ -24,7 +24,7 @@ from datetime import date, datetime
 from ..db import db
 from ..dizzidb import Dizzidb
 
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 
 class Fun(Cog):
@@ -40,7 +40,7 @@ class Fun(Cog):
         " where X is the number of dies to roll, Y is the value of the die, and Z is a bonus to apply at the end.\n"
         "Example: `*PREF*roll 2d20+5`")
     @app_commands.rename(die_string="dice")
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def roll_dice(self, ctx: commands.Context, *, die_string: str) -> None:
         """Rolls a dice with optional bonus (+ or -)"""
         try:
@@ -104,7 +104,7 @@ class Fun(Cog):
     @app_commands.rename(member="user")
     @app_commands.checks.cooldown(2, 5, key=lambda i: (i.guild_id, i.user.id))
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def slap_member(self, ctx: commands.Context, member: Member, *, reason: str = "") -> None:
         """Slap someone for any reason."""
 
@@ -149,7 +149,7 @@ class Fun(Cog):
             aliases=["avatar"],
             brief="Credits for my wonderful avatar",
             usage="`*PREF*art` - Credit where credit is due\nExample: `*PREF*art`")
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def art_source(self, ctx: commands.Context) -> None:
         """Art credits for Dizzi's amazing avatar"""
         embed = Embed(title=f"Dizzi Art Source", description="Avatar is by @holdenkip.art on Instagram", color=DIZZICOLOR)
@@ -178,7 +178,7 @@ class Fun(Cog):
             brief="Get a fact about an animal",
             usage="`*PREF*animalfact <animal>` - gives a random animal fact and picture for a supported `<animal>`.\n"
             "Example: `*PREF*animalfact koala`")
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def animal_fact(self, ctx: commands.Context, animal: Literal['dog', 'cat', 'panda', 'fox', 'koala', 'bird', 'raccoon', 'kangaroo']) -> None:
         """Get a random fact and picture for the supported animals 
         Currently supported animals:
@@ -213,7 +213,7 @@ class Fun(Cog):
             brief="Get a scathing rhyme",
             usage="`*PREF*morelike <rhyme>` - gives you a word that rhymes with `<rhyme>`.\nExample: `*PREF*morelike Dog`")
     @app_commands.checks.cooldown(2, 10)
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def more_like(self, ctx: commands.Context, rhyme: str) -> None:
         """Get a scathing rhyme about a word of your choice. Useless? More like lupus.
         Powered by https://rhymebrain.com/"""
@@ -248,7 +248,7 @@ class Fun(Cog):
             usage="`*PREF*wikipedia <page>` - gives a brief summary for the given wikipedia `<page>`. "
             "If an exact match is not found, the closest relevant one will be given.\nExample: `*PREF*wikipedia discord`")
     @app_commands.checks.cooldown(2, 10)
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def wikipedia_member(self, ctx: commands.Context, *, page: str) -> None:
         """Too lazy to use google? Ask Dizzi to look up wikipedia articles and get a brief summary + link"""
 
@@ -302,7 +302,7 @@ class Fun(Cog):
     @commands.hybrid_command(name="deflect",
             brief="Deflect a beam",
             usage="`*PREF*deflect` - It'll take more than that!\nExample: `*PREF*deflect`")
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def deflect(self, ctx):
         """Deflect a beam of energy so that it'll harmlessly hit a mountain in the background instead."""
         await ctx.send("https://i.imgur.com/MYI8EJh.gif")

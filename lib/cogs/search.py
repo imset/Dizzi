@@ -21,7 +21,7 @@ from discord import (
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
 
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 #get token for saucenao
 with open("./lib/cogs/searchtoken.0", "r", encoding="utf=8") as tf:
@@ -114,7 +114,7 @@ class Search(Cog):
                             "Example: `*PREF*sauce anime https://i.imgur.com/zmXLgvW.gif`\n\n"
                             "`*PREF*sauce other <img>` - Searches `<img>` on SauceNao. `<img>` can be an image url, an image uploaded with the command, or a replied image.\n"
                             "Example: `*PREF*sauce other https://i.imgur.com/zmXLgvW.gif`")
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def sauce(self, ctx, img: Optional[str]):
         """
         Reverse image lookup powered by SauceNao or Trace.Moe.

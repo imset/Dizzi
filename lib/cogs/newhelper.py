@@ -14,7 +14,7 @@ from discord.ext.menus.views import ViewMenuPages
 from ..db import db
 from ..dizzidb import dbprefix
 
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 #create a list of all the commands
 
@@ -91,7 +91,7 @@ class NewHelper(Cog):
             usage="`*PREF*help` - gives you a list of all commands\n`{dbprefix(ctx.guild)}help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
     @app_commands.rename(cmd="command")
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def show_newhelp(self, ctx, cmd: Optional[str]):
         """What kind of person looks up help for the help command?"""
         if ctx.message.guild == None:

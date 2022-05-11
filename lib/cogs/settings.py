@@ -19,7 +19,7 @@ from .reactions import (
     has_emojis, has_reactions
 )
 
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 def check_owner(interaction: discord.Interaction) -> bool:
     return interaction.user.id == 134760463811477504
@@ -43,7 +43,7 @@ class Settings(Cog):
             usage="`*PREF*welcomechannel <channel>` - Sets the channel where Dizzi will welcome people. `<channel>` is a mentioned channel\nExample: `*PREF*welcomechannel #general`.")
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def change_welcomechannel(self, ctx: commands.Context, channel: TextChannel) -> None:
         """Change the default welcome channel for Dizzi to greet people in. The channel must be properly mentioned with the # symbol."""
         db.execute("UPDATE guildsettings SET Welcome = ? WHERE GuildID = ?", str(channel.id), ctx.guild.id)
@@ -56,7 +56,7 @@ class Settings(Cog):
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.rename(new="prefix")
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def change_prefix(self, ctx: commands.Context, new: str) -> None:
         """Change the default prefix that Dizzi will pay attention to. Be careful not to choose one already taken by another bot!
         Most commands can also be invoked with ``/`` or by pinging Dizzi directly."""
@@ -71,7 +71,7 @@ class Settings(Cog):
             with_app_command=False)
     @app_commands.check(check_owner)
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def dbsetup(self, ctx: commands.Context):
         #this command will invoke a class to add all members of a server to a database
         message = await ctx.send(f"Setting up databases for {ctx.guild.name}...")
@@ -88,7 +88,7 @@ class Settings(Cog):
             with_app_command=False)
     @app_commands.check(check_owner)
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def emoteservhist(self, ctx, chnl: Optional[TextChannel]):
         #using this command will cause the bot to read through the entire server history and populate the emote history database
         #channels included with the command will be ignored
@@ -166,7 +166,7 @@ class Settings(Cog):
             with_app_command=False)
     @app_commands.check(check_owner)
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def emotechanhist(self, ctx, channel: TextChannel):
         #using this command will cause the bot to read through the channel history and populate the emote history database
         progress = await ctx.send("Starting...")

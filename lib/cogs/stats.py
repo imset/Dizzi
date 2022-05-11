@@ -24,7 +24,7 @@ from collections import Counter
 from ..db import db
 from ..dizzidb import Dizzidb
 
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 #creates the menu for emoji stats
 class EmojiMenu(ListPageSource):
@@ -125,7 +125,7 @@ class Stats(Cog):
                 "`*PREF*emojihistory server` - Get a list of the server's favorite emojis.\nExample: `*PREF*emojihistory server`")
     @app_commands.guild_only()
     @app_commands.rename(member='user')
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def emojihistory(self, ctx, member: Optional[Member]):
         """Find out what your friend's favorite emojis are. Data is based off both message emojis and reaction emojis.
         Record keeping began on 11/1/2021.

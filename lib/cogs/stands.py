@@ -23,7 +23,7 @@ from discord.errors import HTTPException
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
 
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 #lastfm api token
 #todo before dizzi is released publicly: include specific error checking for if dizzi is setup without this file.
@@ -88,7 +88,7 @@ class Stands(Cog):
         brief="Take hold of your destiny and acquire a stand of your own",
         usage="`*PREF*standroll` - Grab hold of your destiny.\nExample: `*PREF*standroll`")
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def roll_stand(self, ctx):
         """Indeed Jotaro, what you have called an "evil spirit" is but a powerful vision created by your own life energy! And since it stands next to you, it is called... a **Stand!** """
         userdb = Dizzidb(ctx.author, ctx.guild)
@@ -260,7 +260,7 @@ class Stands(Cog):
         brief="See info about your stand or someone else's",
         usage="`*PREF*standinfo` - Learn about your true powers.\nExample: `*PREF*standinfo`")
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def stand_info(self, ctx, member: Optional[Member]):
         """Tells you info about your stand, if you have one. If not, try ;standroll"""
 
@@ -382,7 +382,7 @@ class Stands(Cog):
     brief="Buy items to improve and protect your stand",
     usage="`*PREF*shop` - Check out the fortune teller's shop.\n`*PREF*shop <item>` - Buy an item.\nExample: `*PREF*shop Daily`")
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def shop(self, ctx, *, item: Literal['daily', 'enhancer', 'changer', 'browse']):
         """Check out the mysterious fortune teller's shop.
         Item descriptions:

@@ -10,7 +10,7 @@ from ..dizzidb import Dizzidb, dbprefix
 
 
 #defines the bot's embed color
-DIZZICOLOR = 0x2c7c94
+DIZZICOLOR = 0x9f4863
 
 # copied from https://stackoverflow.com/questions/19774709/use-python-to-find-out-if-a-timezone-currently-in-daylight-savings-time
 def is_dst(zonename):
@@ -27,7 +27,7 @@ class Time(Cog):
                         aliases=["tz"],
                         brief="Get the time in HST, PST, and JST.",
                         usage="`*PREF*timezone now` - gives the current time in JST/HST/PST\n`*PREF*timezone <arg>` - Timezone conversion. `<arg>` is a time (number from 1-24) and a valid timezone. It also optionally accepts AM/PM.\nExample: `*PREF*timezone 8PM pst`")
-    @app_commands.guilds(discord.Object(762125363937411132))
+    #@app_commands.guilds(discord.Object(762125363937411132))
     async def tznow(self, ctx: commands.Context) -> None:
         """Convert a specific time in a timezone to HST, PST, and JST. There are a few timezones available to convert from, but for now it only converts to HST/PST/JST.
         
