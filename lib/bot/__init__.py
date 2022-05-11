@@ -83,7 +83,7 @@ class Bot(BotBase):
             #see above notes about bug with owner_ids
             #owner_ids=OWNER_IDS,
             intents=discord.Intents.all(),
-            activity=discord.Game(name="!help")
+            activity=discord.Game(name="/help")
         )
 
     def setup(self):
