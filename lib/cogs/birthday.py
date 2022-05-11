@@ -4,15 +4,18 @@ import asyncio
 import discord
 from aiohttp import request, ClientSession
 from discord import (
-    Member, Embed
+    Member, Embed, app_commands, Interaction
 )
 from discord.ext.commands import (
     Cog, command, BadArgument, MemberNotFound, guild_only
 )
-from discord.ext import tasks
+from discord.ext import (
+    tasks, menus, commands
+)
 from discord.ext.menus import (
     MenuPages, ListPageSource
 )
+from discord.ext.menus.views import ViewMenuPages
 from datetime import date, datetime
 from ..db import db
 from ..dizzidb import Dizzidb, dbprefix
@@ -67,11 +70,13 @@ class Birthday(Cog):
         self.bdchk.start()
         self.wishedreset.start()
 
-    @command(name="birthdayadd",
+    @commands.hybrid_command(name="birthdayadd",
             aliases=["bdadd", "bda"],
             brief="Add a birthday to the birthdatabase",
             usage="`*PREF*birthdayadd <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*bdadd @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`")
-    @guild_only()
+    @app_commands.guild_only()
+    @app_commands.rename(member="user", day="date")
+    @app_commands.guilds(discord.Object(762125363937411132))
     async def bd_add(self, ctx, member: Member, *, day: str):
         """Add a user to Dizzi's birthday database"""
 
@@ -205,13 +210,14 @@ class Birthday(Cog):
     @bd_add.error
     async def bd_add_error(self, ctx, exc):
         if isinstance(exc, MemberNotFound):
-            await ctx.send("Sorry, something went wrong processing your command. Make sure you @ the user you want to add a birthday for and use a valid date.")
+            await ctx.send("Sorry, something went wrong processing your command. Make sure you @ the user you want to add a birthday for and use a valid date.", ephemeral=True)
 
-    @command(name="birthdaylist",
+    @commands.hybrid_command(name="birthdaylist",
             aliases=["bdlist", "bdl"],
             brief="Show the list of birthdays on this server",
             usage="`*PREF*birthdaylist` - Shows the birthday list.\nExample: `*PREF*bdlist`")
-    @guild_only()
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
     async def bd_list(self, ctx):
         """Show a list of user birthdays on your server."""
 
@@ -236,7 +242,7 @@ class Birthday(Cog):
 
 
         #print(bdconvset)
-        menu = MenuPages(source=BdMenu(ctx, bdconvset))
+        menu = ViewMenuPages(source=BdMenu(ctx, bdconvset))
         await menu.start(ctx)
 
 
