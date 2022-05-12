@@ -260,6 +260,7 @@ class Stands(Cog):
         brief="See info about your stand or someone else's",
         usage="`*PREF*standinfo` - Learn about your true powers.\nExample: `*PREF*standinfo`")
     @app_commands.guild_only()
+    @app_commands.rename(member="user")
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def stand_info(self, ctx, member: Optional[Member]):
         """Tells you info about your stand, if you have one. If not, try ;standroll"""
@@ -378,9 +379,9 @@ class Stands(Cog):
 
 
     @commands.hybrid_command(name="standshop",
-    aliases=["shop"],
-    brief="Buy items to improve and protect your stand",
-    usage="`*PREF*shop` - Check out the fortune teller's shop.\n`*PREF*shop <item>` - Buy an item.\nExample: `*PREF*shop Daily`")
+                            aliases=["shop"],
+                            brief="Buy items to improve and protect your stand",
+                            usage="`*PREF*shop` - Check out the fortune teller's shop.\n`*PREF*shop <item>` - Buy an item.\nExample: `*PREF*shop Daily`")
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def shop(self, ctx, *, item: Literal['daily', 'enhancer', 'changer', 'browse']):
