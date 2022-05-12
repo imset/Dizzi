@@ -59,13 +59,13 @@ def sauce_request(url) -> dict:
         reqdict = dict(zip(keylist, vallist))
 
     reqdict = {
-    "number": len(results),
-    "bool": bool(results),
-    "thumb": best.thumbnail,
-    "similarity": best.similarity,
-    "title": best.title,
-    "url": best.urls,
-    "author": best.author
+        "number": len(results),
+        "bool": bool(results),
+        "thumb": best.thumbnail,
+        "similarity": best.similarity,
+        "title": best.title,
+        "url": best.urls,
+        "author": best.author
     }
 
     return reqdict
@@ -158,17 +158,17 @@ class Search(Cog):
                 tmimage = tmresult["image"]
                 tmepi = tmresult["episode"]
 
-                embed = Embed(title=f"Best Guess: {tmtitle}", description=f"Episode: {tmepi}", color=DIZZICOLOR)
+                embed = Embed(title=f"Best Guess: {tmtitle}", description=f"Input URL: {img}\nEpisode: {tmepi}", color=DIZZICOLOR)
                 embed.add_field(name=f"Video: {tmvideo}", value=f"Similarity: {tmsimi}")
                 embed.set_thumbnail(url=tmimage)
                 embed.add_field(name="Note:", value="Because of limitations with the free version of Trace.moe, you can only use this command 10x per 24hr period.", inline=False)
-                embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nYou can also try {pref}source / {pref}s for a more general search.")
+                embed.set_footer(text=f"This tool does not work well with edited/cropped images.")
                 await ctx.send(embed=embed)
 
             elif response.status == 402:
-                await ctx.send(f"Dizzi has maxed out on its monthly alotted searches with Trace.Moe. Try using {pref}source / {pref}s to search instead.")
+                await ctx.send(f"Dizzi has maxed out on its monthly alotted searches with Trace.Moe. Try using {pref}source / {pref}s to search instead.", ephemeral=True)
             else:
-                await ctx.send(f"API returned a {response.status} status. Try using {pref}source / {pref}s to search instead.")
+                await ctx.send(f"API returned a {response.status} status.", ephemeral=True)
 
     @sauce.command(name="other",
             #aliases=["sauce", "s"],
@@ -194,10 +194,11 @@ class Search(Cog):
         saucedict = sauce_request(img)
 
         if saucedict == {}:
-            await ctx.send(f"SauceNao couldn't find anything on that image. Sorry!")
+            await ctx.send(f"SauceNao couldn't find anything on that image. Sorry!", ephemeral=True)
             return
         else:
             saucetitle = saucedict["title"]
+            #holy shit this is awful
             try:
                 sauceurl = saucedict["url"][0]
             except:
@@ -207,13 +208,14 @@ class Search(Cog):
             except:
                 sauceauthor = ""
             saucesimi = saucedict["similarity"]
-
-            embed = Embed(title=f"Best Guess: {saucetitle}", description=f"URL: {sauceurl}", color=DIZZICOLOR)
+            embed = Embed(title=f"Best Guess: {saucetitle}", description=f"Input URL: {img}", color=DIZZICOLOR)
+            if sauceurl != "":
+                embed.add_field(title=f"Link to Sauce: {sauceurl}")
             embed.add_field(name=f"Author: {sauceauthor}", value=f"Similarity: {saucesimi}")
             embed.set_thumbnail(url=saucedict["thumb"])
             embed.add_field(name="Note:", value="Because of limitations with the free version of SauceNao, you can only use this command 10x per 24hr period.",
                             inline=False)
-            embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nSearching for an anime? Try {pref}animesource / {pref}as for a more detailed search.")
+            embed.set_footer(text=f"This tool does not work well with edited/cropped images.\nSearching for an anime? Try ``{pref}sauce anime`` ``/sauce anime`` for a more detailed search.")
 
             await ctx.send(embed=embed)
 
