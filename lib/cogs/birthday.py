@@ -73,7 +73,7 @@ class Birthday(Cog):
 
     @commands.hybrid_group(name="birthday",
                 aliases=["bd", "bdl", "bda"],
-                brief="Add a birthday to the server's birthdatabase (use /help birthday for more info)",
+                brief="Let Dizzi handle birthdays on your server (``/help birthday`` for more)",
                 usage="`*PREF*birthday add <user>` -Adds a user to the birthday database so they'll be wished a happy birthday. Accepts dates formatted as MM/DD/YY, MM/DD/YYYY, or in a format such as February 27th, 1980. Birthyear is optional. Birthday messages will be output to the welcome channel.\nExample: `*PREF*birthday add @dizzi 10/03`\n`*PREF*bdadd @dizzi Oct 03`\n\n"
                     "`*PREF*birthday list` - Shows the birthday list.\nExample: `*PREF*birthday list`\n\n"
                     "`*PREF*birthday lookup` - Gives the birthday for a specific user.\nExample: `*PREF*birthday lookup @jack`")
@@ -262,6 +262,10 @@ class Birthday(Cog):
     async def lookup(self, ctx: commands.Context, member: Member):
 
         userbd = db.field("SELECT monthday FROM birthday WHERE dbid = ?", f"{member.id}.{ctx.guild.id}")
+        if member.bot == True and member.name == "Dizzi":
+            userbd = "My birthday is 10/03!"
+        elif userbd == None:
+            userbd = "This user has not shared their birthday with me yet!"
 
         embed = Embed(title=f"Birthday for: {member.display_name}", description=userbd, color=DIZZICOLOR)
         embed.set_thumbnail(url=member.avatar)
