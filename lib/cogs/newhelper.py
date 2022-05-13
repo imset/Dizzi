@@ -201,9 +201,11 @@ class NewHelper(Cog):
     #autocomplete for help commands
     @show_help.autocomplete('cmd')
     async def show_help_autocomplete(self, interaction: commands.Context, current: Optional[str]) -> List[app_commands.Choice[str]]:
+        #used to make sure the help command matches properly with the beginning of strings
+        curlen = len(current)
         return [
             app_commands.Choice(name=command, value=command)
-            for command in self.commandnameslist if current.lower() in command.lower()
+            for command in self.commandnameslist if current.lower() in command.lower()[:curlen]
         ][:25]
 
     @show_help.error
