@@ -1,5 +1,6 @@
 from typing import Optional
 import discord
+import textdistance
 from discord import Embed, app_commands, Interaction
 from discord.utils import get
 from discord.ext.commands import (
@@ -28,6 +29,61 @@ def syntax(command, guild):
             
     params = " ".join(params)
     return f"```{cmd_and_aliases} {params}```"
+
+def levdist(self, data, type):
+    data = data.lower()
+    if type == "command":
+        #get command list ignoring hidden commands
+        commandlist = []
+        for command in self.bot.commands:
+            if command.hidden != True:
+                commandlist.append(command)
+
+        simlist = []
+        for cmd in commandlist:
+            simlist.append(textdistance.damerau_levenshtein.normalized_similarity(data, cmd.name.lower()))
+
+        #thanks to: https://stackoverflow.com/questions/2474015/getting-the-index-of-the-returned-max-or-min-item-using-max-min-on-a-list
+        index_max = max(range(len(simlist)), key=simlist.__getitem__)
+
+        # print(commandlist[index_max].name)
+        # print(max(simlist))
+
+        if max(simlist) >= 0.7:
+            return commandlist[index_max].name
+        else:
+            return None
+
+    elif type == "cog":
+        #get command list ignoring hidden commands
+        commandlist = []
+        for command in self.bot.commands:
+            if command.hidden != True:
+                commandlist.append(command)
+
+        #create full list of cogs
+        cogset = set()
+        for cmd in commandlist:
+            cogset.add(cmd.cog_name.lower())
+
+        simlist = []
+        coglist = []
+        #compare input to cog list
+        for cog in cogset:
+            simlist.append(textdistance.damerau_levenshtein.normalized_similarity(data, cog))
+            coglist.append(cog)
+
+
+        #thanks to: https://stackoverflow.com/questions/2474015/getting-the-index-of-the-returned-max-or-min-item-using-max-min-on-a-list
+        index_max = max(range(len(simlist)), key=simlist.__getitem__)
+
+        # print(coglist[index_max])
+        # print(max(simlist))
+
+        if max(simlist) >= 0.7:
+            return coglist[index_max]
+        else:
+            return None
     
     
 class HelpMenu(ListPageSource):
@@ -90,14 +146,14 @@ class NewHelper(Cog):
             brief="Get help with a specific command",
             usage="`*PREF*help` - gives you a list of all commands\n`{dbprefix(ctx.guild)}help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
     @app_commands.rename(cmd="command")
-    @app_commands.guild_only()
+    #@app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def show_newhelp(self, ctx, cmd: Optional[str]):
         """What kind of person looks up help for the help command?"""
-        if ctx.message.guild == None:
-            await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
-            return
-            
+        # if ctx.message.guild == None:
+        #     await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
+        #     return
+        await ctx.interaction.response.defer()
         #remove hidden commands
         commandlist = []
         for command in self.bot.commands:
@@ -111,7 +167,8 @@ class NewHelper(Cog):
             menu = ViewMenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
             await menu.start(ctx)
             if ctx.interaction is not None:
-                await ctx.interaction.response.send_message(f"Success: Retrieved Help Docs", ephemeral=True)
+                #await ctx.interaction.followup.send(f"Success: Retrieved Help Docs", ephemeral=True)
+                await ctx.send("Success: Retrieved Help Docs", ephemeral=True)
             
         else:
             if (commandinput := get(self.bot.commands, name=cmd)):
@@ -121,20 +178,41 @@ class NewHelper(Cog):
                 commandalias = str(self.bot.get_command(cmd))
                 command = get(self.bot.commands, name=commandalias)
                 await self.cmd_help(ctx, command)
-            else:
-                #check cogs
-                coghelpbool = False
-                #creates a smaller list of commands that have a cog that match the input
+            #check if option is a cog. Looks scary but makes sense if you think about it.
+            elif len(coglist := [x for x in commandlist if cmd.title() == x.cog_name]) != 0:
+                menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
+                await menu.start(ctx)
+                if ctx.interaction is not None:
+                    await ctx.send(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
+            #check lev distance for commands
+            elif (cmdchk := levdist(self, data=cmd, type="command")) != None:
+                cmd = cmdchk
+                commandinput = get(self.bot.commands, name=cmd)
+                await self.cmd_help(ctx, commandinput)
+            #check lev distance for cogs (this is dummy hard so I'm coming back to it later)
+            elif (cogchk := levdist(self, data=cmd, type="cog")) != None:
+                cmd = cogchk
                 coglist = [x for x in commandlist if cmd.title() == x.cog_name]
+                menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
+                await menu.start(ctx)
+                if ctx.interaction is not None:
+                    await ctx.send(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
+            else:
+                # #check cogs
+                # #creates a smaller list of commands that have a cog that match the input
+                # coglist = [x for x in commandlist if cmd.title() == x.cog_name]
                 
-                #if the coglist is empty, search fails
-                if not len(coglist):    
-                    await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
-                else:
-                    menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
-                    await menu.start(ctx)
-                    if ctx.interaction is not None:
-                        await ctx.interaction.response.send_message(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
+                # #if the coglist is empty, search fails
+                # #new: if coglist is empty, try hamming distance
+                # if not len(coglist):
+                #     await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
+                # else:
+                #     menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
+                #     await menu.start(ctx)
+                #     if ctx.interaction is not None:
+                #         await ctx.interaction.response.send_message(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
+                await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
+
     @show_newhelp.error
     async def show_newhelp_error(self, ctx, exc):
         if isinstance(exc, AttributeError):
