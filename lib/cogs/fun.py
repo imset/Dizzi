@@ -276,7 +276,7 @@ class Fun(Cog):
         updated_member = await message.edit(content="", embed=embed)
 
     @command(name="alert",
-            aliases=["tab","tabs"],
+            aliases=["tab","tabs", "alarm"],
             brief="Keep tabs on someone and be alerted the next time they post something",
             usage="`*PREF*alert <user>` - Will alert you the next time a user posts something.\nExample: `*PREF*alert @hapaboba`")
     @guild_only()

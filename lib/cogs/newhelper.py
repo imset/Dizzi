@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import discord
 import textdistance
 from discord import Embed, app_commands, Interaction
@@ -46,8 +46,6 @@ def levdist(self, data, type):
         #thanks to: https://stackoverflow.com/questions/2474015/getting-the-index-of-the-returned-max-or-min-item-using-max-min-on-a-list
         index_max = max(range(len(simlist)), key=simlist.__getitem__)
 
-        # print(commandlist[index_max].name)
-        # print(max(simlist))
 
         if max(simlist) >= 0.7:
             return commandlist[index_max].name
@@ -143,12 +141,12 @@ class NewHelper(Cog):
         await ctx.send(embed=embed)
     
     @commands.hybrid_command(name="help",
-            brief="Get help with a specific command",
-            usage="`*PREF*help` - gives you a list of all commands\n`{dbprefix(ctx.guild)}help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
+            brief="View a list of all commands, or get help with a specific command",
+            usage=f"`*PREF*help` - gives you a list of all commands\n*PREF*help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
     @app_commands.rename(cmd="command")
     #@app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
-    async def show_newhelp(self, ctx, cmd: Optional[str]):
+    async def show_help(self, ctx, cmd: Optional[str]):
         """What kind of person looks up help for the help command?"""
         # if ctx.message.guild == None:
         #     await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
@@ -198,23 +196,18 @@ class NewHelper(Cog):
                 if ctx.interaction is not None:
                     await ctx.send(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
             else:
-                # #check cogs
-                # #creates a smaller list of commands that have a cog that match the input
-                # coglist = [x for x in commandlist if cmd.title() == x.cog_name]
-                
-                # #if the coglist is empty, search fails
-                # #new: if coglist is empty, try hamming distance
-                # if not len(coglist):
-                #     await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
-                # else:
-                #     menu = ViewMenuPages(source=HelpMenu(ctx, coglist))
-                #     await menu.start(ctx)
-                #     if ctx.interaction is not None:
-                #         await ctx.interaction.response.send_message(f"Success: Retrieved Help Docs for {cmd}", ephemeral=True)
-                await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
+                 await ctx.send(f"That command or command group does not exist ({cmd}). Use /help or {dbprefix(ctx.guild)}help for a list of commands.", ephemeral=True)
 
-    @show_newhelp.error
-    async def show_newhelp_error(self, ctx, exc):
+    #autocomplete for help commands
+    @show_help.autocomplete('cmd')
+    async def show_help_autocomplete(self, interaction: commands.Context, current: Optional[str]) -> List[app_commands.Choice[str]]:
+        return [
+            app_commands.Choice(name=command, value=command)
+            for command in self.commandnameslist if current.lower() in command.lower()
+        ][:25]
+
+    @show_help.error
+    async def show_help_error(self, ctx, exc):
         if isinstance(exc, AttributeError):
             await ctx.send("I'm not sure what that command is. Sorry!", ephemeral=True)
     
@@ -222,6 +215,11 @@ class NewHelper(Cog):
     async def on_ready(self):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("newhelper")
+            #setup all command names
+            self.commandnameslist = []
+            for command in self.bot.commands:
+                if command.hidden != True:
+                    self.commandnameslist.append(command.name)
             
 async def setup(bot):
     await bot.add_cog(NewHelper(bot))

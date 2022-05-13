@@ -182,7 +182,7 @@ class Bot(BotBase):
                 
             self.ready = True
             print("Dizzi is ready")
-            
+
         else:
             print("Dizzi reconnected")
         
