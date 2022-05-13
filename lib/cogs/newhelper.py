@@ -144,7 +144,7 @@ class NewHelper(Cog):
             brief="View a list of all commands, or get help with a specific command",
             usage=f"`*PREF*help` - gives you a list of all commands\n*PREF*help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
     @app_commands.rename(cmd="command")
-    #@app_commands.guild_only()
+    @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def show_help(self, ctx, cmd: Optional[str]):
         """What kind of person looks up help for the help command?"""
