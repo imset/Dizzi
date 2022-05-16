@@ -6,6 +6,7 @@ from discord.utils import get
 from discord.ext.commands import (
     Cog, command, guild_only
 )
+from discord.app_commands.errors import CommandInvokeError
 from discord.ext.menus import (
     MenuPages, ListPageSource
 )
@@ -19,8 +20,22 @@ DIZZICOLOR = 0x9f4863
 
 #create a list of all the commands
 
-def syntax(command, guild):
+def syntax(command, guild, single = False):
+    #single is used to determine if help is being invoked for the whole list or just a single command
     cmd_and_aliases = dbprefix(guild) + "|".join([str(command), *command.aliases])
+    try:
+        if command.with_app_command == True:
+            slash_txt = "/" + str(command)
+            noapp = False
+        else:
+            slash_txt == ""
+            noapp = True
+
+    except AttributeError:
+        slash_txt = ""
+        noapp = True
+        pass
+
     params = []
     
     for key, value in command.params.items():
@@ -28,7 +43,16 @@ def syntax(command, guild):
             params.append(f"[{key}]" if "NoneType" in str(value) else f"<{key}>")
             
     params = " ".join(params)
-    return f"```{cmd_and_aliases} {params}```"
+
+    print(noapp)
+    print(single)
+
+    if single == False:
+        return f"```{cmd_and_aliases} {params}```"
+    elif noapp == True and single == True:
+        return f"This command can only be run as a **text command**.\n```{cmd_and_aliases} {params}```"
+    else:
+        return f"This command can be run either as a **text command** or a **slash command**.\n\n`Text:`\n```{cmd_and_aliases} {params}```\n`Slash:`\n```{slash_txt} {params}```"
 
 def levdist(self, data, type):
     data = data.lower()
@@ -133,7 +157,7 @@ class NewHelper(Cog):
         self.bot.remove_command("help")
         
     async def cmd_help(self, ctx, command):
-        embed = Embed(title=f"Help for: `{str(command).title()}`", description=syntax(command, ctx.guild), color=DIZZICOLOR)
+        embed = Embed(title=f"Help for: `{str(command).title()}`", description=syntax(command, ctx.guild, single = True), color=DIZZICOLOR)
         embed.add_field(name="**————————————————\nCommand Description\n————————————————**", value=f"{command.help}", inline=False)
         #the following is used to replace *PREF* in usage docs with the actual prefix
         tmpusage = command.usage.replace("*PREF*", dbprefix(ctx.guild))
@@ -142,7 +166,7 @@ class NewHelper(Cog):
     
     @commands.hybrid_command(name="help",
             brief="View a list of all commands, or get help with a specific command",
-            usage=f"`*PREF*help` - gives you a list of all commands\n*PREF*help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
+            usage=f"`*PREF*help` - gives you a list of all commands\n`*PREF*help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
     @app_commands.rename(cmd="command")
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
@@ -161,7 +185,7 @@ class NewHelper(Cog):
         #alphabetize cmdlist by cog_name and name
         commandlist = sorted(commandlist, key=lambda x: (x.cog_name, x.name))
         
-        if cmd is None:
+        if cmd is None or cmd.lower() == "all" or cmd.lower() == "dizzi":
             menu = ViewMenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
             await menu.start(ctx)
             if ctx.interaction is not None:
@@ -222,6 +246,7 @@ class NewHelper(Cog):
             for command in self.bot.commands:
                 if command.hidden != True:
                     self.commandnameslist.append(command.name)
+            self.commandnameslist.sort()
             
 async def setup(bot):
     await bot.add_cog(NewHelper(bot))
