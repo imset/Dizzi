@@ -5,7 +5,7 @@ import time
 import discord
 from typing import Optional
 from discord.ext.commands import (
-    command, Cog
+    command, Cog, is_owner, has_permissions
 )
 from discord import (
     TextChannel, Permissions, Object, app_commands, Interaction
@@ -21,8 +21,9 @@ from .reactions import (
 
 DIZZICOLOR = 0x9f4863
 
-def check_owner(interaction: discord.Interaction) -> bool:
-    return interaction.user.id == 134760463811477504
+async def check_owner(interaction: discord.Interaction) -> bool:
+    print(interaction.bot.is_owner(interaction.user))
+    return await interaction.bot.is_owner(interaction.user)
 
 def emotefilter(message):
     #needs to be true for the messages that will be sent, and false for any others.
@@ -41,7 +42,7 @@ class Settings(Cog):
     @commands.hybrid_command(name="welcomechannel",
             brief="Set a channel for Dizzi to greet people in.",
             usage="`*PREF*welcomechannel <channel>` - Sets the channel where Dizzi will welcome people. `<channel>` is a mentioned channel\nExample: `*PREF*welcomechannel #general`.")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @has_permissions(manage_guild=True)
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def change_welcomechannel(self, ctx: commands.Context, channel: TextChannel) -> None:
@@ -49,11 +50,13 @@ class Settings(Cog):
         db.execute("UPDATE guildsettings SET Welcome = ? WHERE GuildID = ?", str(channel.id), ctx.guild.id)
         await ctx.send(f"New Welcome Channel has been set.")
 
+    # @commands.hybrid_command(name="helppref",
+    #         brief="Set preferences for Dizzi's help command.")
 
     @commands.hybrid_command(name="prefix",
             brief="Change the default prefix to use Dizzi commands",
             usage="`*PREF*prefix <new>` - changes the server prefix for Dizzi into the value for `<new>`.\nExample: `*PREF*prefix +`")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @has_permissions(manage_guild=True)
     @app_commands.rename(new="prefix")
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
@@ -69,7 +72,8 @@ class Settings(Cog):
     @commands.hybrid_command(name="dbsetup",
             hidden=True,
             with_app_command=False)
-    @app_commands.check(check_owner)
+    #@app_commands.check(check_owner)
+    @is_owner()
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def dbsetup(self, ctx: commands.Context):
@@ -86,7 +90,7 @@ class Settings(Cog):
             aliases=["esh"],
             hidden=True,
             with_app_command=False)
-    @app_commands.check(check_owner)
+    @is_owner()
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def emoteservhist(self, ctx, chnl: Optional[TextChannel]):
@@ -164,7 +168,7 @@ class Settings(Cog):
             aliases=["ech"],
             hidden=True,
             with_app_command=False)
-    @app_commands.check(check_owner)
+    @is_owner()
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def emotechanhist(self, ctx, channel: TextChannel):
