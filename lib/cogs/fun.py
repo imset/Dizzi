@@ -17,7 +17,7 @@ from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from discord.errors import HTTPException
 from discord.ext.commands import (
-    Cog, command, cooldown, BucketType, BadArgument, guild_only, BadLiteralArgument
+    Cog, command, cooldown, BucketType, BadArgument, guild_only, BadLiteralArgument, is_owner
 )
 from discord.ext.commands.errors import MemberNotFound
 from datetime import date, datetime
@@ -142,7 +142,7 @@ class Fun(Cog):
             reason = " ".join(reasonlist)
         else:
             reason = "for no reason"
-        await ctx.send(f"{ctx.interaction.user.display_name} slapped {member.mention} {reason}.")
+        await ctx.send(f"{ctx.author.display_name} slapped {member.mention} {reason}.")
         
 
     @commands.hybrid_command(name="art",
@@ -167,8 +167,7 @@ class Fun(Cog):
             brief="Repeat stuff, repeat stuff",
             usage="`*PREF*echo <message>` - Dizzi will repeat `<message>`\nExample: `*PREF*echo Hello World!`")
     async def echo_member(self, ctx, *, message) -> None:
-        """NOTE: THIS COMMAND DOES NOT HAVE A SLASH COMMAND VERSION.
-        Turn your own measly words into the words of the powerful Dizzi."""
+        """Turn your own measly words into the words of the powerful Dizzi."""
         await ctx.message.delete()
         await ctx.send(message)
 
@@ -276,7 +275,7 @@ class Fun(Cog):
         updated_member = await message.edit(content="", embed=embed)
 
     @command(name="alert",
-            aliases=["tab","tabs", "alarm"],
+            aliases=["tabs", "alarm"],
             brief="Keep tabs on someone and be alerted the next time they post something",
             usage="`*PREF*alert <user>` - Will alert you the next time a user posts something.\nExample: `*PREF*alert @hapaboba`")
     @guild_only()
