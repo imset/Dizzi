@@ -93,6 +93,13 @@ class Bot(BotBase):
         print(" cog setup complete")
         asyncio.run(self.load_extension('jishaku'))
         print(" !jishaku loaded!")
+        #setup all command names (used in help command, located here to allow reloading newhelper w/ jsk)
+        self.commandnameslist = []
+        for command in self.commands:
+            if command.hidden != True and command.name != "help" and command.name != "jishaku":
+                self.commandnameslist.append(command.name)
+        self.commandnameslist.sort()
+
         
     def run(self, version):
         self.VERSION = version

@@ -173,6 +173,7 @@ class NewHelper(Cog):
         # if ctx.message.guild == None:
         #     await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
         #     return
+        print(self.bot.commandnameslist)
         await ctx.interaction.response.defer()
         #remove hidden commands
         commandlist = []
@@ -227,7 +228,7 @@ class NewHelper(Cog):
         curlen = len(current)
         return [
             app_commands.Choice(name=command, value=command)
-            for command in self.commandnameslist if current.lower() in command.lower()[:curlen]
+            for command in self.bot.commandnameslist if current.lower() in command.lower()[:curlen]
         ][:25]
 
     @show_help.error
@@ -239,12 +240,13 @@ class NewHelper(Cog):
     async def on_ready(self):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("newhelper")
-            #setup all command names
-            self.commandnameslist = []
-            for command in self.bot.commands:
-                if command.hidden != True and command.name != "help" and command.name != "jishaku":
-                    self.commandnameslist.append(command.name)
-            self.commandnameslist.sort()
+            # #setup all command names
+            #this is now located in  /bot/__init__.py
+            # self.commandnameslist = []
+            # for command in self.bot.commands:
+            #     if command.hidden != True and command.name != "help" and command.name != "jishaku":
+            #         self.commandnameslist.append(command.name)
+            # self.commandnameslist.sort()
             
 async def setup(bot):
     await bot.add_cog(NewHelper(bot))
