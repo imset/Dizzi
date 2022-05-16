@@ -68,8 +68,6 @@ class Birthday(Cog):
     """Test description for birthday cog"""
     def __init__(self, bot):
         self.bot = bot
-        self.bdchk.start()
-        self.wishedreset.start()
 
     @commands.hybrid_group(name="birthday",
                 aliases=["bd", "bdl", "bda"],
@@ -320,6 +318,9 @@ class Birthday(Cog):
         #tells bot that the cog is ready
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("birthday")
+            #start tasks
+            self.bdchk.start()
+            self.wishedreset.start()
             
 async def setup(bot):
     await bot.add_cog(Birthday(bot))

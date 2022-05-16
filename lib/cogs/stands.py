@@ -80,8 +80,6 @@ def actchange(name, tags):
 class Stands(Cog):
     def __init__(self, bot):
             self.bot = bot
-            #starts daily reset function
-            self.dailyreset.start()
 
     @commands.hybrid_command(name="standroll",
         aliases=["sr"],
@@ -551,6 +549,8 @@ class Stands(Cog):
     async def on_ready(self):
         if not self.bot.ready:
             self.bot.cogs_ready.ready_up("stands")
+            #starts daily reset function
+            self.dailyreset.start()
 
 async def setup(bot):
         await bot.add_cog(Stands(bot))
