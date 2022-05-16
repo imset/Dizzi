@@ -3,7 +3,7 @@ import re
 import asyncio
 import discord
 import enum
-from typing import Literal
+from typing import Literal, Optional
 from random import (
     choice, randint
 )
@@ -306,6 +306,31 @@ class Fun(Cog):
     async def deflect(self, ctx):
         """Deflect a beam of energy so that it'll harmlessly hit a mountain in the background instead."""
         await ctx.send("https://i.imgur.com/MYI8EJh.gif")
+
+    @commands.hybrid_command(name="impostor",
+            aliases=["imposter", "sus"],
+            brief="Dizzi will become the imposter and impersonate someone",
+            usage="`*PREF*imposter <user> <message>` - Dizzi will say `<message>` while pretending to be `<user>`.\nExample: `*PREF*imposter @moe I'm a stupid moron with an ugly face and a big butt`")
+    @app_commands.guild_only()
+    @app_commands.rename(member="user")
+    #/@app_commands.guilds(discord.Object(762125363937411132))
+    async def imposter(self, ctx: commands.Context, member: Member, *, message: str) -> None:
+        """Dizzi will become the imposter and impersonate a user of your choice. Remember, with great power comes great responsibility!"""
+        if ctx.interaction == None:
+            await ctx.message.delete()
+        avatarbytes = await member.avatar.read()
+        imposterhook = await ctx.channel.create_webhook(name="imposterhook", avatar=avatarbytes, reason="Dizzi imposter command")
+        await imposterhook.send(content=message, username=member.display_name)
+        await imposterhook.delete()
+
+    # @commands.hybrid_command(name="aniquote",
+    #         aliases=["aq"],
+    #         brief="Get a quote from an anime character. You can either specify a character to get one from, or get a completely random one.",
+    #         usage="`*PREF*aniquote <character>` - Get a random quote from the specified anime character. If a character isn't specified, you'll get a random anime character.")
+    # async def aniquote(self, ctx: commands.Context, character: Optional[str]) -> None:
+    #     if character == None:
+            
+
 
     @Cog.listener()
     async def on_message(self, message):
