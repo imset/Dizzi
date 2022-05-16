@@ -90,8 +90,9 @@ class Bot(BotBase):
         for cog in COGS:
             asyncio.run(self.load_extension(f"lib.cogs.{cog}"))
             print(f" {cog} cog loaded")
-
         print(" cog setup complete")
+        asyncio.run(self.load_extension('jishaku'))
+        print(" !jishaku loaded!")
         
     def run(self, version):
         self.VERSION = version
