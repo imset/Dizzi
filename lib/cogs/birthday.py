@@ -78,7 +78,7 @@ class Birthday(Cog):
     @app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def birthday(self, ctx: commands.Context) -> None:
-        """Dizzi will handle birthdays for your server. Has two subcommands: ``list`` and ``add``."""
+        """Dizzi will handle birthdays for your server. Has three subcommands: ``list``,``add``, and ``lookup``."""
         await ctx.send(f"Sorry, the syntax for this command has changed.\nInstead of ``{dbprefix(ctx.guild)}birthdayadd`` or ``{dbprefix(ctx.guild)}birthdaylist``, you now need to use ``{dbprefix(ctx.guild)}birthday add`` or ``{dbprefix(ctx.guild)}birthday list`` (notice the space).\nThis command can also be invoked with ``/`` instead of {dbprefix(ctx.guild)}.")
 
     @birthday.command(name="add",
