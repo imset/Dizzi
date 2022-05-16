@@ -44,8 +44,6 @@ def syntax(command, guild, single = False):
             
     params = " ".join(params)
 
-    print(noapp)
-    print(single)
 
     if single == False:
         return f"```{cmd_and_aliases} {params}```"
@@ -60,7 +58,7 @@ def levdist(self, data, type):
         #get command list ignoring hidden commands
         commandlist = []
         for command in self.bot.commands:
-            if command.hidden != True:
+            if command.hidden != True and command.name != "help" and command.name != "jishaku":
                 commandlist.append(command)
 
         simlist = []
@@ -80,7 +78,7 @@ def levdist(self, data, type):
         #get command list ignoring hidden commands
         commandlist = []
         for command in self.bot.commands:
-            if command.hidden != True:
+            if command.hidden != True and command.name != "help" and command.name != "jishaku":
                 commandlist.append(command)
 
         #create full list of cogs
@@ -112,7 +110,7 @@ class HelpMenu(ListPageSource):
     def __init__(self, ctx, data):
         self.ctx = ctx
         
-        super().__init__(data, per_page=8)
+        super().__init__(data, per_page=6)
         
     async def write_page(self, menu, fields=[]):
         offset = (menu.current_page*self.per_page) + 1
@@ -127,7 +125,7 @@ class HelpMenu(ListPageSource):
         for brief, value, cog, hidden, name, enabled in fields:
             #generate cog name headers and create fields. Within Dizzi's help documents, cogs are referred to as groups.
             
-            if hidden != True and enabled != False and name != "help":
+            if hidden != True and enabled != False and name != "help" and name != "jishaku":
                 if cog != cogname:
                     cogname = cog
                     embed.add_field(name="**————————————————**", value = f"**{str(cogname).title()} Commands:\n————————————————**", inline=False)
@@ -179,13 +177,13 @@ class NewHelper(Cog):
         #remove hidden commands
         commandlist = []
         for command in self.bot.commands:
-            if command.hidden != True:
+            if command.hidden != True and command.name != "help" and command.name != "jishaku":
                 commandlist.append(command)
 
         #alphabetize cmdlist by cog_name and name
         commandlist = sorted(commandlist, key=lambda x: (x.cog_name, x.name))
         
-        if cmd is None or cmd.lower() == "all" or cmd.lower() == "dizzi":
+        if cmd is None or cmd.lower() == "all" or cmd.lower() == "dizzi" or cmd.lower() == "jishaku" or cmd.lower() == "jsk":
             menu = ViewMenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
             await menu.start(ctx)
             if ctx.interaction is not None:
@@ -244,7 +242,7 @@ class NewHelper(Cog):
             #setup all command names
             self.commandnameslist = []
             for command in self.bot.commands:
-                if command.hidden != True:
+                if command.hidden != True and command.name != "help" and command.name != "jishaku":
                     self.commandnameslist.append(command.name)
             self.commandnameslist.sort()
             
