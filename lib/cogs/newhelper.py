@@ -1,4 +1,5 @@
 from typing import Optional, List
+import math
 import discord
 import textdistance
 from discord import Embed, app_commands, Interaction
@@ -22,7 +23,12 @@ DIZZICOLOR = 0x9f4863
 
 def syntax(command, guild, single = False):
     #single is used to determine if help is being invoked for the whole list or just a single command
-    cmd_and_aliases = dbprefix(guild) + "|".join([str(command), *command.aliases])
+
+    if guild != None:
+        cmd_and_aliases = dbprefix(guild) + "|".join([str(command), *command.aliases])
+    else:
+        cmd_and_aliases = "!" + "|".join([str(command), *command.aliases])
+
     try:
         if command.with_app_command == True:
             slash_txt = "/" + str(command)
@@ -166,15 +172,12 @@ class NewHelper(Cog):
             brief="View a list of all commands, or get help with a specific command",
             usage=f"`*PREF*help` - gives you a list of all commands\n`*PREF*help <cmd>` - gives you help documents for a `<cmd>`, where `<cmd>` is any command that Dizzi understands.\nExample: `*PREF*help help` (this should look familiar)")
     @app_commands.rename(cmd="command")
-    @app_commands.guild_only()
+    #@app_commands.guild_only()
     #@app_commands.guilds(discord.Object(762125363937411132))
     async def show_help(self, ctx, cmd: Optional[str]):
         """What kind of person looks up help for the help command?"""
-        # if ctx.message.guild == None:
-        #     await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
-        #     return
-        print(self.bot.commandnameslist)
-        await ctx.interaction.response.defer()
+        if ctx.interaction is not None:
+            await ctx.interaction.response.defer()
         #remove hidden commands
         commandlist = []
         for command in self.bot.commands:
@@ -183,10 +186,52 @@ class NewHelper(Cog):
 
         #alphabetize cmdlist by cog_name and name
         commandlist = sorted(commandlist, key=lambda x: (x.cog_name, x.name))
-        
-        if cmd is None or cmd.lower() == "all" or cmd.lower() == "dizzi" or cmd.lower() == "jishaku" or cmd.lower() == "jsk":
+
+        #if the help command is called in a DM, there's various errors. This handles it.
+        if ctx.message.guild == None and (cmd is None or cmd.lower() == "all" or cmd.lower() == "dizzi" or cmd.lower() == "jishaku" or cmd.lower() == "jsk"):
+            # await ctx.send("Sorry, there's a bug right now that prevents me from sending help commands over DM. For now, try using that command in a server we're in together!")
+            # return
+            fields = []
+            for entry in commandlist:
+                #Todo: Make this a function and call it in format_page
+                fields.append((entry.brief or "No description", syntax(entry, ctx.guild), entry.cog_name, entry.hidden, entry.name, entry.enabled))
+            #stuff to split the command
+            cmdsnum = len(commandlist)
+            cmdsend = []
+            msgs = int(math.ceil(cmdsnum / 15))
+            fields = sorted(fields, key=lambda x: (x[2], x[4]))
+            i = 0
+            while i < msgs:
+                if i == 0:
+                    embed = Embed(title="Dizzi's Command Help", description=f"Use ``/help <command>`` or ``!help <command>`` for more info about a specific command\n Most commands can be invoked with either ``/``, ``!``, or by pinging Dizzi directly. While the ``/`` version of commands are recommended, commands will be displayed with the ``!`` prefix in the help docs for consistency.",color=DIZZICOLOR)
+                else:
+                    embed = Embed(title=f"Dizzi's Command Help (Page {i+1})", color=DIZZICOLOR)
+                embed.set_thumbnail(url=ctx.me.avatar)
+                #embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} commands.")
+                cogname = ""
+                for brief, value, cog, hidden, name, enabled in fields[i*15:(i+1)*15]:
+                    #generate cog name headers and create fields. Within Dizzi's help documents, cogs are referred to as groups.
+                    if hidden != True and enabled != False and name != "help" and name != "jishaku":
+                        if cog != cogname:
+                            cogname = cog
+                            embed.add_field(name="**————————————————**", value = f"**{str(cogname).title()} Commands:\n————————————————**", inline=False)
+                        embed.add_field(name=brief, value=value, inline=False)
+                    else:
+                        continue
+                cmdsend.append(embed)
+                i += 1
+
+            for i in range(msgs):
+                await ctx.send(embed=cmdsend[i])
+
+        elif cmd is None or cmd.lower() == "all" or cmd.lower() == "dizzi" or cmd.lower() == "jishaku" or cmd.lower() == "jsk":
             menu = ViewMenuPages(source=HelpMenu(ctx, commandlist), delete_message_after=True, timeout=60.0)
-            await menu.start(ctx)
+            #used to fix some bug in the menu helper
+            try:
+                await menu.start(ctx)
+            except AttributeError:
+                pass
+
             if ctx.interaction is not None:
                 #await ctx.interaction.followup.send(f"Success: Retrieved Help Docs", ephemeral=True)
                 await ctx.send("Success: Retrieved Help Docs", ephemeral=True)
