@@ -1,8 +1,10 @@
 import aiohttp
+import sys
 import re
 import asyncio
 import discord
 import enum
+import io
 from typing import Literal, Optional
 from random import (
     choice, randint
@@ -23,6 +25,9 @@ from discord.ext.commands.errors import MemberNotFound
 from datetime import date, datetime
 from ..db import db
 from ..dizzidb import Dizzidb
+
+sys.path.insert(0, 'C:/Users/HWool/Documents/My Programs/_PyLibraries/dizzimg')
+from dizzimg import smash
 
 DIZZICOLOR = 0x9f4863
 
@@ -166,6 +171,7 @@ class Fun(Cog):
             aliases=["say"],
             brief="Repeat stuff, repeat stuff",
             usage="`*PREF*echo <message>` - Dizzi will repeat `<message>`\nExample: `*PREF*echo Hello World!`")
+    @guild_only()
     async def echo_member(self, ctx, *, message) -> None:
         """Turn your own measly words into the words of the powerful Dizzi."""
         await ctx.message.delete()
@@ -329,7 +335,20 @@ class Fun(Cog):
     # async def aniquote(self, ctx: commands.Context, character: Optional[str]) -> None:
     #     if character == None:
             
+    @commands.hybrid_group(name="smashbros",
+            aliases=["newcomer"],
+            fallback="user",
+            brief="Dizzi will generate an image for you in the style of a smash newcomer",
+            usage="`*PREF*`newcomer <user> <toptext> <bottomtext> - Dizzi will generate the image of the user with the given top and bottom texts.\nExample: `*PREF*`newcomer @john \"John Smith\" \"Joins the Fight!\" ")
+    @app_commands.guild_only()
+    async def smashbros(self, ctx: commands.Context, member: Member, *, introtext: str):
+        memberavatar = await member.avatar.to_file()
+        image = smash.Newcomer(toptext=member.display_name, bottext=introtext, topimg=memberavatar.fp)
+        output = image.generate(returnbytes=True)
+        await ctx.send(file=discord.File(fp=output, filename='newcomer.png'))
 
+    # @smashbros.command(name="custom")
+    # async def custsmash(self, ctx: commands.Context, img: discord.Asset)
 
     @Cog.listener()
     async def on_message(self, message):
