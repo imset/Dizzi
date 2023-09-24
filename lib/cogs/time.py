@@ -40,6 +40,7 @@ class Time(Cog):
             `[EST/EDT/Eastern]`
             `[MST/MDT/Mountain]`
             `[PHT/Philippines/Filipino]`
+            `[KST/Korea]`
         """
         utcmoment_naive = datetime.utcnow()
         utcmoment = utcmoment_naive.replace(tzinfo=pytz.utc)
@@ -50,11 +51,16 @@ class Time(Cog):
         pst_send = utcmoment.astimezone(pst)
         hst_send = utcmoment.astimezone(hst)
         jst_send = utcmoment.astimezone(jst)
-        #send the 3 timezones
+        #korea
+        kst = pytz.timezone("Asia/Seoul")
+        kst_send = utcmoment.astimezone(kst)
+        #send timezones
         tzembed = Embed(title="Current Time", color = DIZZICOLOR)
         tzembed.add_field(name="__**HST**__", value = "> " + hst_send.strftime("%I:%M %p"), inline=True)
         tzembed.add_field(name="__**PST**__", value = "> " + pst_send.strftime("%I:%M %p"), inline=True)
         tzembed.add_field(name="__**JST**__", value = "> " + jst_send.strftime("%I:%M %p"), inline=True)
+        #korea
+        tzembed.add_field(name="__**KST**__", value = "> " + kst_send.strftime("%I:%M %p"), inline=True)
         await ctx.send(embed=tzembed)
 
     @tznow.command(brief="Convert a specific time to HST, PST, and JST.")
@@ -178,6 +184,9 @@ class Time(Cog):
         elif "pht" in str(arg.lower()) or "philippines" in str(arg.lower()) or "filipino" in str(arg.lower()):
             zone = "Asia/Manila"
             zoneshrt = "PHT"
+        elif "kst" in str(arg.lower()) or "korea" in str(arg.lower()):
+            zone = "Asia/Seoul"
+            zoneshrt = "KST"
         else:
             await ctx.send(f"Error: Please include a valid timezone or location indicator.", ephemeral=True)
             return
@@ -195,11 +204,17 @@ class Time(Cog):
         pst_send = aware_zone.astimezone(pst)
         hst_send = aware_zone.astimezone(hst)
         jst_send = aware_zone.astimezone(jst)
-        #send the 3 timezones
+        #korea
+        kst = pytz.timezone("Asia/Seoul")
+        kst_send = aware_zone.astimezone(kst)
+
+        #send the timezones
         tzembed = Embed(title="Timezone Conversion: " + zone, description=hour + ":" + min + " " + ampm + " " + zoneshrt + " is:", color=DIZZICOLOR) 
         tzembed.add_field(name="__**HST**__", value = "> " + hst_send.strftime("%I:%M %p"), inline=True)
         tzembed.add_field(name="__**PST**__", value = "> " + pst_send.strftime("%I:%M %p"), inline=True)
         tzembed.add_field(name="__**JST**__", value = "> " + jst_send.strftime("%I:%M %p"), inline=True)
+        #korea
+        tzembed.add_field(name="__**KST**__", value = "> " + kst_send.strftime("%I:%M %p"), inline=True)
         await ctx.send(embed=tzembed)
         return
 
