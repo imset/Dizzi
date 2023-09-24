@@ -1,7 +1,12 @@
 # Dizzi
 ## A simple discord bot made with discord.py.
 ### Features:
-* Pretty much whatever I want it to do
+* Timezone Conversion
+* Server-Wide and Personal Emoji Tracking
+* Slash and Prefix Command Support
+* JoJo's Bizarre Adventure Stand Creation Mini-Game utilizing Stable Diffusion
+* Birthday Reminders
+* And much more!
 
 ### Thanks to: 
 * Carberrera Tutorials (https://www.youtube.com/c/CarberraTutorials) for helping get this set up initially.
