@@ -4,6 +4,8 @@ import csv
 import re
 import string
 import discord
+import replicate
+import functools
 from typing import Literal
 from discord.ext import commands
 from random import (
@@ -76,6 +78,82 @@ def actchange(name, tags):
             newstand = False
 
         return [newstand, chosen_tag]
+
+###Dalle Mini makes slightly better stands but costs more money
+
+# def sync_standai(desc="A Stand from Jojo's Bizarre Adventure"):
+#     print("Hit 2")
+#     model = replicate.models.get("borisdayma/dalle-mini")
+#     print("Hit 3")
+#     stand_ai_output = model.predict(prompt=desc, n_predictions=1)[0]
+#     print("Hit 4")
+#     return stand_ai_output
+
+# async def async_standai(desc, bot):
+#     thing = functools.partial(sync_standai, desc=desc)
+#     print("hit 1")
+#     image = await bot.loop.run_in_executor(None, thing)
+#     #these variable names are aids but I'm in no condition to change them right now
+#     print("hit 5")
+#     return image
+
+###Min-Dalle is quicker but produces worse stands
+def sync_standai(desc="A Stand from Jojo's Bizarre Adventure"):
+    print("Hit 2")
+    model = replicate.models.get("stability-ai/sdxl")
+    print("Hit 3")
+    nsfw_hack = False
+    while not nsfw_hack:
+        try:
+            for stand_ai_output in model.predict(prompt=desc, negative_prompt="(nsfw), naked"):
+                #
+                print("Hit 4")
+                nsfw_hack = True
+                return stand_ai_output
+        except replicate.exceptions.ModelError as e:
+            print(e)
+
+
+async def async_standai(desc, bot):
+    thing = functools.partial(sync_standai, desc=desc)
+    print("hit 1")
+    image = await bot.loop.run_in_executor(None, thing)
+    #these variable names are aids but I'm in no condition to change them right now
+    print("hit 5")
+    return image
+
+# Define a simple View that gives us a counter button
+class StandInfo(discord.ui.View):
+
+    # Define the actual button
+    # When pressed, this increments the number displayed until it hits 5.
+    # When it hits 5, the counter button is disabled and it turns green.
+    # note: The name of the function does not matter to the library
+    @discord.ui.button(label='0', style=discord.ButtonStyle.red)
+    async def count(self, interaction: discord.Interaction, button: discord.ui.Button):
+        number = int(button.label) if button.label else 0
+        if number + 1 >= 5:
+            button.style = discord.ButtonStyle.green
+            button.disabled = True
+        button.label = str(number + 1)
+
+        # Make sure to update the message with our updated selves
+        await interaction.response.edit_message(view=self)
+
+    @discord.ui.button(label='1', style=discord.ButtonStyle.green)
+    async def hitme(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Hi")
+
+
+# Define a View that will give us our own personal counter button
+class EphStandMenu(discord.ui.View):
+    # When this button is pressed, it will respond with a Counter view that will
+    # give the button presser their own personal button they can press 5 times.
+    @discord.ui.button(label='Click', style=discord.ButtonStyle.blurple)
+    async def receive(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # ephemeral=True makes the message hidden from everyone except the button presser
+        await interaction.response.send_message('Enjoy!', view=Counter(), ephemeral=True)
+
 
 class Stands(Cog):
     def __init__(self, bot):
@@ -240,10 +318,25 @@ class Stands(Cog):
                     traitstring = ', '.join(standtraits)
                     db.execute("UPDATE stand SET traits = ? WHERE UserID = ?", traitstring, userdb.uid)
 
+                    #generate image
 
 
-                    await ctx.send(f"Success! You got the stand **「{standname}」** with the ability **{chosen_row['name']}**! Use {dbprefix(ctx.guild)}standinfo to check it out.")
+                    await ctx.send(f"Success! {ctx.author.mention} got the stand **「{standname}」** with the ability **{chosen_row['name']}**! Use /standinfo or {dbprefix(ctx.guild)}standinfo to check it out.\nIn a few moments, I'll post a picture of your new stand! (This can take up to a couple minutes)")
                     #await ctx.send(chosen_row['name'])
+                    print("0")
+                    #STUFF HERE
+                    #todo: unnecessary elif
+                    if standtraits[3] == "Humanoid":
+                        genstring=f"masterpiece, best quality, (anime style), jojo stand, {standtraits[1]}, {standtraits[5]} theme, {standtraits[2]} looking, {standtraits[3]}, {standtraits[8]}, {standtraits[9]}"
+                    else:
+                        genstring=f"masterpiece, best quality, (anime style), jojo stand, {standtraits[1]}, {standtraits[5]} theme, {standtraits[2]} looking, {standtraits[3]}, {standtraits[4]}, {standtraits[8]}, {standtraits[9]}"
+                    
+                    stand_ai_output = await async_standai(genstring, self.bot)
+
+                    await ctx.send(f"{ctx.author.mention}\'s 「{standname}」: \n{stand_ai_output}")
+
+                    db.execute("UPDATE stand SET image = ? WHERE UserID = ?", stand_ai_output, userdb.uid)
+
                 except StopIteration:
                     print("StopIteration Error")
                     await ctx.send("Failure! You feel your connection to your stand disappear!\nPerhaps you are not yet fated to have a power of your own yet... try again?")
@@ -283,11 +376,16 @@ class Stands(Cog):
                 br = db.field(f"SELECT battlerecord FROM stand WHERE UserID = ?", userdb.uid).split(", ")
                 traits = db.field(f"SELECT traits FROM stand WHERE UserID = ?", userdb.uid).split(", ")
                 origin = int(db.field(f"SELECT origin FROM stand WHERE UserID = ?", userdb.uid))
+                standimage = db.field(f"SELECT image FROM stand WHERE UserID = ?", userdb.uid)
 
                 if act == 1:
                     embed = Embed(title=f"**Stand Name**: 「{standname}」",color=DIZZICOLOR)
                 else:
                     embed = Embed(title=f"**Stand Name**: 「{standname} - Act {act}」",color=DIZZICOLOR)
+                if standimage != "NONE":
+                    embed.set_image(url=standimage)
+                else:
+                    embed.add_field(name="Your Stand's Image is still generating.", value="Check back soon!")
                 #embed.add_field(name="Stand Name:", value=f"「{standname}」\n**Wins:** {br[0]} | **Losses:** {br[1]}")
                 embed.add_field(name="Stats:", value=f"Power = {stats[0]}\nSpeed = {stats[1]}\nAbility Range = {stats[2]}\nStamina = {stats[3]}\nPrecision = {stats[4]}\nPotential = {stats[5]}")
                 if traits[3] == "Humanoid" and traits[2] == "Natural":
@@ -311,6 +409,7 @@ class Stands(Cog):
                 if origin == 0:
                     embed.set_footer(text="\nCopyright © Justin Mahar | The Superpower List")
                 embed.set_author(name=f"{ctx.author.display_name}", icon_url=f"{ctx.author.avatar}")
+                #embed.set_thumbnail(url=ctx.author.avatar)
 
                 await ctx.send(embed=embed)
         else:
@@ -332,12 +431,17 @@ class Stands(Cog):
                 stats = standstathandler(db.field(f"SELECT stats FROM stand WHERE UserID = ?", userdb.uid).split(", "))
                 br = db.field(f"SELECT battlerecord FROM stand WHERE UserID = ?", userdb.uid).split(", ")
                 traits = db.field(f"SELECT traits FROM stand WHERE UserID = ?", userdb.uid).split(", ")
+                standimage = db.field(f"SELECT image FROM stand WHERE UserID = ?", userdb.uid)
 
                 if act == 1:
                     embed = Embed(title=f"**Stand Name**: 「{standname}」",color=DIZZICOLOR)
                 else:
                     embed = Embed(title=f"**Stand Name**: 「{standname} - Act {act}」",color=DIZZICOLOR)
                 #embed.add_field(name="Stand Name:", value=f"「{standname}」\n**Wins:** {br[0]} | **Losses:** {br[1]}")
+                if standimage != "NONE":
+                    embed.set_image(url=standimage)
+                else:
+                    embed.add_field(name="Your Stand's Image is still generating.", value="Check back soon!")
                 embed.add_field(name="Stats:", value=f"Power = {stats[0]}\nSpeed = {stats[1]}\nAbility Range = {stats[2]}\nStamina = {stats[3]}\nPrecision = {stats[4]}\nPotential = {stats[5]}")
                 if traits[3] == "Humanoid" and traits[2] == "Natural":
                     embed.add_field(name="Appearance:",
@@ -358,22 +462,32 @@ class Stands(Cog):
                 embed.add_field(name="Energy:", value=f"{energy}")
                 embed.add_field(name="Battle Record:", value=f"Wins: {br[0]} | Losses: {br[1]}")
                 embed.set_footer(text="\nCopyright © Justin Mahar | The Superpower List")
-                embed.set_author(name=f"{ctx.author.display_name}", icon_url=f"{ctx.author.avatar}")
+                embed.set_author(name=f"{member.display_name}", icon_url=f"{member.avatar}")
 
 
                 await ctx.send(embed=embed)
 
-    # @command(name="approach",
-    # aliases=["a"],
-    # brief="Approach someone for combat (not yet implemented)",
-    # usage="`*PREF*approach` - Stand Users Attract Other Stand Users.\nExample: `*PREF*approach @dizzi`")
-    # @guild_only()
-    # async def approach(self, ctx, member: Optional[Member]):
-    #     """Approach someone for combat (not yet implemented)"""
-    #     if member != None:
-    #         await ctx.send(f"Oh? You're approaching {member.display_name}? Instead of waiting for this command to actually be implemented, you're coming right at them?")
-    #     else:
-    #         await ctx.send(f"Oh? You're approaching someone? Instead of waiting for this command to actually be implemented, you're coming right at them?")
+    @commands.hybrid_command(name="imgen")
+    @app_commands.guild_only()
+    async def imgen(self, ctx, *, text):
+        # stand_ai_output = await async_standaiv2(text, self.bot)
+        # #stand_ai_output_list = list(stand_ai_output)
+        # await ctx.send(f"{stand_ai_output}")
+        embed = Embed(title=f"Test Embed",color=DIZZICOLOR)
+        await ctx.send(embed=embed, view=EphemeralCounter(), ephemeral=True)
+
+
+    @command(name="approach",
+    aliases=["a"],
+    brief="Approach someone for combat (not yet implemented)",
+    usage="`*PREF*approach` - Stand Users Attract Other Stand Users.\nExample: `*PREF*approach @dizzi`")
+    @guild_only()
+    async def approach(self, ctx, member: Optional[Member]):
+        """Approach someone for combat (not yet implemented)"""
+        if member != None:
+            await ctx.send(f"Oh? You're approaching {member.display_name}? Instead of waiting for this command to actually be implemented, you're coming right at them?")
+        else:
+            await ctx.send(f"Oh? You're approaching someone? Instead of waiting for this command to actually be implemented, you're coming right at them?")
 
 
     @commands.hybrid_command(name="standshop",
@@ -465,10 +579,10 @@ class Stands(Cog):
                 statstring = ', '.join(newstats)
                 db.execute("UPDATE stand SET stats = ? WHERE UserID = ?", statstring, userdb.uid)
                 await ctx.send(embed=embed)
-        elif item.lower().replace(" ", "") == "actchanger" or item.lower().replace(" ", "") == "actchange" or item.lower().replace(" ", "") == "ac":
+        elif item.lower().replace(" ", "") == "changer" or item.lower().replace(" ", "") == "actchanger" or item.lower().replace(" ", "") == "actchange" or item.lower().replace(" ", "") == "ac":
             
-            if arrows < 1:
-                await ctx.send(f"Whoops! You need {1 - arrows} more arrowheads to buy that!")
+            if arrows < 3:
+                await ctx.send(f"Whoops! You need {3 - arrows} more arrowheads to buy that!")
             else:
                 arrows -= 3
                 act = db.field(f"SELECT act FROM stand WHERE UserID = ?", userdb.uid)
