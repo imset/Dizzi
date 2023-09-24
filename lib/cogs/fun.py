@@ -5,6 +5,8 @@ import asyncio
 import discord
 import enum
 import io
+import functools
+import replicate
 from typing import Literal, Optional
 from random import (
     choice, randint
@@ -13,7 +15,7 @@ from mediawiki import (
     MediaWiki, exceptions
 )
 from discord import (
-    Member, Embed, app_commands, Interaction
+    Member, Embed, app_commands, Interaction, ui
 )
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
@@ -22,14 +24,31 @@ from discord.ext.commands import (
     Cog, command, cooldown, BucketType, BadArgument, guild_only, BadLiteralArgument, is_owner
 )
 from discord.ext.commands.errors import MemberNotFound
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from ..db import db
 from ..dizzidb import Dizzidb
 
 sys.path.insert(0, 'C:/Users/HWool/Documents/My Programs/_PyLibraries/dizzimg')
-from dizzimg import smash
+from dizzimg import smash, tiles
 
 DIZZICOLOR = 0x9f4863
+
+def sync_charai(desc="AI image for Kai's character generator"):
+    print("Hit 2")
+    model = replicate.models.get("stability-ai/sdxl")
+    print("Hit 3")
+    for ai_output in model.predict(prompt=desc):
+        #
+        print("Hit 4")
+        return ai_output
+
+async def async_charai(desc, bot):
+    thing = functools.partial(sync_charai, desc=desc)
+    print("hit 1")
+    image = await bot.loop.run_in_executor(None, thing)
+    #these variable names are aids but I'm in no condition to change them right now
+    print("hit 5")
+    return image
 
 
 class Fun(Cog):
@@ -37,6 +56,53 @@ class Fun(Cog):
     def __init__(self, bot) -> None:
         self.bot: commands.Bot = bot
         # tree = bot.tree
+
+
+    class TestButton(ui.View):
+
+        class TestModal(ui.Modal, title="Do you know the character?"):
+            answer = ui.TextInput(label="Your Answer:")
+            #todo: establish the user
+            async def on_submit(self, interaction: discord.Interaction):
+                await interaction.response.send_message(f'You responded with: {self.answer.value}\nNote: If you kept the guessing window open between rounds, your guess may not have counted!', ephemeral=True)
+                self.user = interaction.user
+                self.interaction = interaction
+                return self.user, self.answer.value
+
+
+        def __init__(self, loops, answer, expire=None):
+            super().__init__(timeout=15)
+            self.value = None
+            self.loops = loops
+            self.winner = None
+            self.guess = None
+            self.answer = answer
+            self.curtime = datetime.now()
+            self.expire = expire
+
+        # When the confirm button is pressed, set the inner value to `True` and
+        # stop the View from listening to more input.
+        # We also send the user an ephemeral message that we're confirming their choice.
+        @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green)
+        async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+            #await interaction.response.send_message('Confirming', ephemeral=True)
+
+            if self.expire is not None:
+                if self.curtime < self.expire:
+                    modal = self.TestModal(timeout=7)
+                    await interaction.response.send_modal(modal)
+                    await modal.wait()
+                    try:
+                        if modal.answer.value.lower() == self.answer.lower():
+                            self.winner = modal.user
+                            self.stop()
+                    except AttributeError:
+                        pass
+                else:
+                    self.stop()
+            else:
+                await interaction.response.send_message("Please wait a moment for the quiz to start!", ephemeral=True)
+
         
     @commands.hybrid_command(name="roll",
         aliases=["r"],
@@ -312,8 +378,8 @@ class Fun(Cog):
         """Deflect a beam of energy so that it'll harmlessly hit a mountain in the background instead."""
         await ctx.send("https://i.imgur.com/MYI8EJh.gif")
 
-    @commands.hybrid_command(name="impostor",
-            aliases=["imposter", "sus"],
+    @commands.hybrid_command(name="imposter",
+            aliases=["impostor", "sus"],
             brief="Dizzi will become the imposter and impersonate someone",
             usage="`*PREF*imposter <user> <message>` - Dizzi will say `<message>` while pretending to be `<user>`.\nExample: `*PREF*imposter @moe I'm a stupid moron with an ugly face and a big butt`")
     @app_commands.guild_only()
@@ -350,6 +416,95 @@ class Fun(Cog):
     # @smashbros.command(name="custom")
     # async def custsmash(self, ctx: commands.Context, img: discord.Asset)
 
+    @commands.hybrid_command(name="aniquiz")
+    @app_commands.guild_only()
+    @app_commands.guilds(discord.Object(762125363937411132))
+    async def aniquiz(self, ctx: commands.Context):
+        curtime = datetime.now()
+
+        endtime = datetime.now() + timedelta(minutes=1)
+
+        expires = []
+
+        for i in range(6):
+            if i == 0:
+                expires.append(curtime + timedelta(seconds=15))
+            else:
+                expires.append(expires[i-1] + timedelta(seconds=15))
+
+
+        answer = "Vegeta"
+        loops = 0
+        winner = None
+
+        view = self.TestButton(loops=loops, answer=answer)
+
+        embed = Embed(title=f"Aniquiz is starting!",color=DIZZICOLOR)
+
+        await ctx.interaction.response.send_message(embed=embed, view=view)
+
+        await asyncio.sleep(5)
+
+        while curtime < endtime and loops < 5 and winner == None:
+            loops += 1
+            image = tiles.TileFilter(style="square", size=2**(loops+1), bgcolor="black", space=1, rotation=0).generate(returnbytes=True)
+            file = discord.File(fp=image, filename="guess.png")
+            #generate the embed
+            view.stop()
+            if loops % 2 != 0:
+                embed = Embed(title=f"Aniquiz! Loop {loops}, execute!",color=DIZZICOLOR)
+                embed.set_image(url="attachment://guess.png")
+                curtime = datetime.now()
+                view = self.TestButton(loops=loops, answer=answer, expire=expires[loops])
+                #edit the interaction
+                await ctx.interaction.edit_original_response(attachments=[file], embed=embed, view=view)
+                await view.wait()
+                winner = view.winner
+            else:
+                embed= Embed(title=f"No right answers!", description="Too hard? Let's make it easier!")
+                view = self.TestButton(loops=loops, answer=answer)
+                await ctx.interaction.edit_original_response(attachments=[], embed=embed, view=None)
+                await asyncio.sleep(5)
+
+
+        if not winner:
+            embed = Embed(title=f"Nobody won! The answer was: {answer}",color=DIZZICOLOR)
+            await ctx.interaction.edit_original_response(embed=embed, view=None)
+        else:
+            embed = Embed(title=f"Winner! {winner.name} guessed: {answer}",color=DIZZICOLOR)
+            await ctx.interaction.edit_original_response(embed=embed, view=None)
+
+    @commands.hybrid_command(name="character",
+            aliases=["char"],
+            brief="Create a randomly generated DnD character (code courtesy of Kai Nakamura)",
+            usage="`*PREF*character <name> <skills>` - Try out a random character, with the name `<name>` and the skills `<skills>`\nExample: `*PREF*character Scrimblo Pyromancy`")
+    #@app_commands.guilds(discord.Object(762125363937411132))
+    async def chargen(self, ctx: commands.Context, name:str, *, skills:str) -> None:
+        """Kai Nakamura's fantastic character generator!"""
+        #legacy from the OG program from Kai
+        #name = input("Character Name: ")
+        #skills = input("What is one thing this character good at?: ")
+
+        diceroll = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        diceroll2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+
+        x = choice(diceroll)
+        y = choice(diceroll2)
+
+        #make a list for races
+        races = ["Roll again", "Dragonborn", "Dwarf", "Elf", "Gnome", "Half-Elf", "Human", "Halfling", "Half-Orc", "Tiefling", "Genasi", "Aarakocra", "Tabaxi", "Tortle"]
+
+        #make list for class
+        classes = ["Roll again", "Artificer", "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"]
+
+
+        await ctx.send(f"{name}, sounds like an adventurer who is a {races[x]}, {classes[y]} who's good at {skills}")
+        generatemsg = await ctx.send("Generating an image")
+
+        #my own ai generation stuff
+        ai_output = await async_charai(f"A {races[x]} {classes[y]} adventurer who's good at {skills}", self.bot)
+        await generatemsg.edit(content=f"{ctx.author.mention}\'s character, {name}: \n{ai_output}")
+
     @Cog.listener()
     async def on_message(self, message):
         #used to check if a user is needed in the alert system
@@ -369,6 +524,7 @@ class Fun(Cog):
                 db.execute("DELETE FROM alert WHERE dbid = ?", userdb.dbid)
             else:
                 return
+
 
     @Cog.listener()
     async def on_ready(self):
