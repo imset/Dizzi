@@ -467,15 +467,6 @@ class Stands(Cog):
 
                 await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="imgen")
-    @app_commands.guild_only()
-    async def imgen(self, ctx, *, text):
-        # stand_ai_output = await async_standaiv2(text, self.bot)
-        # #stand_ai_output_list = list(stand_ai_output)
-        # await ctx.send(f"{stand_ai_output}")
-        embed = Embed(title=f"Test Embed",color=DIZZICOLOR)
-        await ctx.send(embed=embed, view=EphemeralCounter(), ephemeral=True)
-
 
     @command(name="approach",
     aliases=["a"],
