@@ -35,12 +35,11 @@ DIZZICOLOR = 0x9f4863
 
 def sync_charai(desc="AI image for Kai's character generator"):
     print("Hit 2")
-    model = replicate.models.get("stability-ai/sdxl")
+    #model = replicate.models.get("stability-ai/sdxl")
     print("Hit 3")
-    for ai_output in model.predict(prompt=desc):
-        #
-        print("Hit 4")
-        return ai_output
+    ai_output = replicate.run("stability-ai/sdxl:8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f", input={"prompt":f"{desc}"})
+    print("Hit 4")
+    return ai_output[0]
 
 async def async_charai(desc, bot):
     thing = functools.partial(sync_charai, desc=desc)
