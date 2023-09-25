@@ -242,42 +242,6 @@ class Fun(Cog):
         """Turn your own measly words into the words of the powerful Dizzi."""
         await ctx.message.delete()
         await ctx.send(message)
-
-
-    @commands.hybrid_command(name="animalfact",
-            aliases=["af"],
-            brief="Get a fact about an animal",
-            usage="`*PREF*animalfact <animal>` - gives a random animal fact and picture for a supported `<animal>`.\n"
-            "Example: `*PREF*animalfact koala`")
-    #@app_commands.guilds(discord.Object(762125363937411132))
-    async def animal_fact(self, ctx: commands.Context, animal: Literal['dog', 'cat', 'panda', 'fox', 'koala', 'bird', 'raccoon', 'kangaroo']) -> None:
-        """Get a random fact and picture for the supported animals 
-        Currently supported animals:
-            `Dog`
-            `Cat`
-            `Panda`
-            `Fox`
-            `Koala`
-            `Bird`
-            `Raccoon`
-            `Kangaroo`
-        Powered by https://some-random-api.ml/
-            """
-
-        if animal.lower() in ("dog", "cat", "panda", "fox", "koala", "bird", "raccoon", "kangaroo"):
-            URL = f"https://some-random-api.ml/animal/{animal.lower()}"
-            
-            async with aiohttp.request("GET", URL, headers={}) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    embed = Embed(title=f"{animal.title()} fact", description=data["fact"], color=DIZZICOLOR)
-                    embed.set_thumbnail(url=data["image"])
-                    
-                    await ctx.send(embed=embed)
-                else:
-                    await ctx.send(f"API returned a {response.status} status.")
-        else:
-            await ctx.send("No facts are available for that animal. Use help animalfact to get a list of supported animals.")
             
     @commands.hybrid_command(name="morelike",
             aliases=["ml"],
@@ -504,6 +468,23 @@ class Fun(Cog):
         #my own ai generation stuff
         ai_output = await async_charai(f"A {races[x]} {classes[y]} adventurer who's good at {skills}", self.bot)
         await generatemsg.edit(content=f"{ctx.author.mention}\'s character, {name}: \n{ai_output}")
+
+
+    @commands.hybrid_command(name="imposter",
+            aliases=["impostor", "sus"],
+            brief="Dizzi will become the imposter and impersonate someone",
+            usage="`*PREF*imposter <user> <message>` - Dizzi will say `<message>` while pretending to be `<user>`.\nExample: `*PREF*imposter @moe I'm a stupid moron with an ugly face and a big butt`")
+    @app_commands.guild_only()
+    @app_commands.rename(member="user")
+    #/@app_commands.guilds(discord.Object(762125363937411132))
+    async def imposter(self, ctx: commands.Context, member: Member, *, message: str) -> None:
+        """Dizzi will become the imposter and impersonate a user of your choice. Remember, with great power comes great responsibility!"""
+        if ctx.interaction == None:
+            await ctx.message.delete()
+        avatarbytes = await member.avatar.read()
+        imposterhook = await ctx.channel.create_webhook(name="imposterhook", avatar=avatarbytes, reason="Dizzi imposter command")
+        await imposterhook.send(content=message, username=member.display_name)
+        await imposterhook.delete()
 
     @Cog.listener()
     async def on_message(self, message):
