@@ -8,3 +8,4 @@ lib/bot/testtoken.0
 *.log
 *.0
 ffmpeg
+lib/cogs/deprecated/search.py
