@@ -9,3 +9,4 @@ lib/bot/testtoken.0
 *.0
 ffmpeg
 lib/cogs/deprecated/
+.venv
